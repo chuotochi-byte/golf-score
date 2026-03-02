@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b3d2e" />
+  <title>Golf Score</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+
+  <style>
+    :root{
+      --bg:#0b3d2e; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
+      --shadow: 0 10px 24px rgba(2,6,23,.12); --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background: linear-gradient(180deg, var(--bg), #05261c);
+      color: var(--ink);
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:10px 10px 90px;}
+
+    /* header */
+    .headerCard{
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: var(--radius);
+      padding: 10px 10px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      overflow:hidden;
+      transition: max-height .25s ease, padding .25s ease, opacity .2s ease, border-width .2s ease;
+    }
+    .headerRow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
+    .titleTiny{font-size:12px;color:#0b3d2e;font-weight:900;margin:0 0 2px;}
+    .field{display:flex;flex-direction:column;gap:4px;min-width:140px;flex:1;}
+    .field input{
+      height:36px;border-radius:10px;border:1px solid var(--line);
+      padding:0 10px;font-size:14px;outline:none;background:#fff;
+    }
+    .tabs,.pageTabs{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+    .tabBtn,.pageBtn{
+      height:44px; padding:0 10px; border-radius:14px;
+      border: 1px solid rgba(255,255,255,.55);
+      background: rgba(255,255,255,.18);
+      color:#eafff7; font-weight:1000; cursor:pointer; flex:1;
+    }
+    .tabBtn{height:40px;border-radius:999px;flex:0 0 auto;min-width:110px;}
+    .active{background: rgba(255,255,255,.92)!important;color: var(--ink)!important;border-color: rgba(255,255,255,.92)!important;}
+
+    body.headerCollapsed .headerCard{
+      max-height:0;
+      padding:0 10px;
+      border-width:0;
+      opacity:0;
+    }
+
+    .collapsedSpacer{height:8px;display:none;}
+    body.headerCollapsed .collapsedSpacer{display:block;}
+
+    /* cards */
+    .card{
+      margin-top:10px;
+      background: rgba(255,255,255,.96);
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .cardHeader{
+      padding:10px;
+      border-bottom:1px solid var(--line);
+      display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    }
+    .cardHeader h2{margin:0;font-size:13px;color:#0b3d2e;}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .btn{
+      height:36px;padding:0 10px;border-radius:12px;border:1px solid var(--line);
+      background:#fff;cursor:pointer;font-weight:1000;
+    }
+    .btn.danger{border-color: rgba(185,28,28,.35);color:#b91c1c;}
+
+    /* compact tables */
+    .tableWrap{width:100%;overflow:auto;-webkit-overflow-scrolling:touch;}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      min-width:0;
+    }
+    thead th{
+      position:sticky;top:0;background:#f8fafc;z-index:1;
+      border-bottom:1px solid var(--line);
+      font-size:11px;color:var(--muted);
+      padding:6px 4px;
+      text-align:center;
+      white-space:nowrap;
+    }
+    tbody td, tfoot td{
+      border-bottom:1px solid var(--line);
+      padding:5px 3px;
+      text-align:center;
+      white-space:nowrap;
+      font-size:13px;
+    }
+    tbody tr:nth-child(even){background:#fbfdff;}
+    .holeCell{font-weight:1000;color:#0b3d2e;font-size:12px;}
+
+    input.num{
+      width:52px;height:32px;
+      border-radius:10px;border:1px solid var(--line);
+      padding:0 6px;font-size:16px;text-align:center;outline:none;background:#fff;
+    }
+    tfoot td{background:#f8fafc;font-weight:1000;border-top:2px solid #cbd5e1;font-size:12px;}
+    .tfootLabel{color:#0b3d2e;font-size:12px;}
+    .mono{font-variant-numeric: tabular-nums;}
+
+    .pill{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:56px;
+      padding:4px 6px;
+      border-radius:999px;
+      font-weight:1000;
+      background:#e6f4ef;color:#064e3b;border:1px solid rgba(6,78,59,.14);
+      letter-spacing:.04em;
+      font-size:12px;
+    }
+    .pill.gray{background:#f1f5f9;color:#334155;border-color:rgba(51,65,85,.14);}
+
+    /* dock */
+    .footerDock{
+      position:fixed;left:0;right:0;bottom:0;
+      padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(2,6,23,.32);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255,255,255,.18);
+    }
+    .dockInner{max-width:980px;margin:0 auto;display:flex;gap:10px;}
+    .dockBtn{
+      flex:1;height:46px;border-radius:16px;border:1px solid rgba(255,255,255,.35);
+      background: rgba(255,255,255,.14);color:#eafff7;font-weight:1000;cursor:pointer;
+    }
+    .dockBtn.primary{background: rgba(255,255,255,.92);color: var(--ink);border-color: rgba(255,255,255,.92);}
+
+    /* settings button when header hidden */
+    .fab{
+      position:fixed;right:12px;top:12px;z-index:50;
+      height:42px;padding:0 12px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.35);
+      background: rgba(2,6,23,.30);
+      color:#eafff7;font-weight:1000;
+      display:none;
+    }
+    body.headerCollapsed .fab{display:inline-flex;align-items:center;gap:6px;}
+
+    @media print{
+      body{background:#fff !important;}
+      .footerDock, .tabs, .pageTabs, .actions, .fab {display:none !important;}
+      .wrap{padding:0 !important;max-width:none !important;}
+      .headerCard, .card{box-shadow:none !important;border:1px solid #ddd !important;}
+      .tableWrap{overflow:visible !important;}
+      thead th{position:static !important;}
+      .printOnly{display:block !important;}
+      .noPrint{display:none !important;}
+      .pageBreak{break-before:page;page-break-before:always;}
+    }
+    .printOnly{display:none;}
+  </style>
+</head>
+
+<body>
+  <button class="fab" id="settingsBtn" type="button">⚙ 設定</button>
+
+  <div class="wrap">
+    <div class="headerCard" id="headerCard">
+      <div class="headerRow">
+        <div class="field">
+          <div class="titleTiny">日付</div>
+          <input id="date" type="date">
+        </div>
+        <div class="field">
+          <div class="titleTiny">ゴルフ場名</div>
+          <input id="course" type="text" placeholder="例：○○カントリー">
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tabBtn active" id="btnOut" type="button">アウトスタート</button>
+        <button class="tabBtn" id="btnIn" type="button">インスタート</button>
+      </div>
+
+      <div class="pageTabs">
+        <button class="pageBtn active" id="page1Btn" type="button">1枚目：スコア/マッチ/チーム</button>
+        <button class="pageBtn" id="page2Btn" type="button">2枚目：OP/LV</button>
+      </div>
+    </div>
+
+    <div class="collapsedSpacer"></div>
+
+    <!-- PAGE 1 -->
+    <section class="card" id="page1">
+      <div class="cardHeader">
+        <h2>スコア＋マッチ（増田vs幸田）＋チーム（増田&牛島vs幸田&M）</h2>
+        <div class="actions">
+          <button class="btn" id="fillParBtn" type="button">仮入力(全員4)</button>
+          <button class="btn danger" id="clearScoresBtn" type="button">1枚目リセット</button>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>hole</th><th>増田</th><th>幸田</th><th>牛島</th><th>M</th><th>マッチ</th><th>チーム戦</th>
+            </tr>
+          </thead>
+          <tbody id="scoreTbody"></tbody>
+          <tfoot>
+            <tr>
+              <td class="tfootLabel">合計</td>
+              <td id="sumS0" class="mono">0</td>
+              <td id="sumS1" class="mono">0</td>
+              <td id="sumS2" class="mono">0</td>
+              <td id="sumS3" class="mono">0</td>
+              <td class="tfootLabel">マッチ<span class="mono" id="matchTotalInRow">0</span></td>
+              <td class="tfootLabel">チーム<span class="mono" id="teamTotalInRow">0</span></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE 2 -->
+    <section class="card" id="page2" style="display:none;">
+      <div class="cardHeader">
+        <h2>オリンピック(OP)&ラスベガス(LV)</h2>
+        <div class="actions">
+          <button class="btn danger" id="clearOpLvBtn" type="button">2枚目リセット</button>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>hole</th>
+              <th>増田OP</th><th>増田LV</th>
+              <th>幸田OP</th><th>幸田LV</th>
+              <th>牛島OP</th><th>牛島LV</th>
+              <th>MOP</th><th>MLV</th>
+            </tr>
+          </thead>
+          <tbody id="oplvTbody"></tbody>
+          <tfoot>
+            <tr>
+              <td class="tfootLabel">合計</td>
+              <td id="sumOP0" class="mono">0</td><td id="sumLV0" class="mono">0</td>
+              <td id="sumOP1" class="mono">0</td><td id="sumLV1" class="mono">0</td>
+              <td id="sumOP2" class="mono">0</td><td id="sumLV2" class="mono">0</td>
+              <td id="sumOP3" class="mono">0</td><td id="sumLV3" class="mono">0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="footerDock">
+    <div class="dockInner">
+      <button class="dockBtn primary" id="saveBtn" type="button">保存（端末内）</button>
+      <button class="dockBtn" id="printAllBtn" type="button">PDF保存（全部）</button>
+      <button class="dockBtn" id="clearAllBtn" type="button">全消去</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const LS_KEY = "golf_score_pwa_rebuild_v1";
+  const HOLES = 18;
+
+  const makeEmptySide = () => ({
+    strokes: Array.from({length:HOLES}, () => [null,null,null,null]),
+    op: Array.from({length:HOLES}, () => [null,null,null,null]),
+    lv: Array.from({length:HOLES}, () => [null,null,null,null]),
+  });
+
+  let state = {
+    meta: { date:"", course:"" },
+    start: "out",     // out|in  表示順：out=1-9→10-18 / in=10-18→1-9
+    page: 1,          // 1|2
+    headerCollapsed: false,
+    out: makeEmptySide(),
+    in: makeEmptySide(),
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const safeInt = (v) => {
+    if (v === "" || v == null) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  const current = () => state[state.start];
+
+  function holeOrder(){
+    const front = [...Array(9).keys()];               // 0..8 => hole1..9
+    const back  = [...Array(9).keys()].map(i=>i+9);   // 9..17 => hole10..18
+    return state.start === "out" ? [...front, ...back] : [...back, ...front];
+  }
+
+  function repeatMark(mark, count){
+    if (!count || count <= 0) return "—";
+    return mark.repeat(count);
+  }
+
+  function matchResultAt(absIdx){
+    const s = current().strokes[absIdx];
+    const a=s[0], b=s[1];
+    if (a==null || b==null) return "—";
+    if (a<b) return "〇";
+    if (a>b) return "×";
+    return "—";
+  }
+
+  function teamTimeline(){
+    // 引き分け持ち越しは「表示順」で進める（インスタートなら10→18→1→9）
+    const order = holeOrder();
+    const side = current();
+    let carry = 0;
+    const display = Array(HOLES).fill("—");
+    const points  = Array(HOLES).fill(0);
+
+    for (const absIdx of order){
+      const s = side.strokes[absIdx];
+      if (s.some(v => v==null)) continue;
+
+      const t1 = s[0] + s[2]; // 増田+牛島
+      const t2 = s[1] + s[3]; // 幸田+M
+
+      if (t1 === t2){
+        carry += 1;
+        display[absIdx] = "—";
+        points[absIdx] = 0;
+        continue;
+      }
+
+      const win = t1 < t2;
+      const p = 1 + carry;
+      carry = 0;
+
+      display[absIdx] = repeatMark(win ? "〇" : "×", p);
+      points[absIdx]  = win ? +p : -p;
+    }
+    return {display, points};
+  }
+
+  function makePill(text){
+    const span = document.createElement("span");
+    span.className = "pill" + (text==="—" ? " gray" : "");
+    span.textContent = text;
+    return span;
+  }
+
+  function renderPage1(){
+    const order = holeOrder();
+    const side = current();
+    const tbody = $("scoreTbody");
+    tbody.innerHTML = "";
+
+    const team = teamTimeline();
+    const sumS = [0,0,0,0];
+    let matchTotal = 0;
+    let teamTotal = 0;
+
+    for (const absIdx of order){
+      const tr = document.createElement("tr");
+
+      const tdHole = document.createElement("td");
+      tdHole.className = "holeCell";
+      tdHole.textContent = "hole" + (absIdx + 1);
+      tr.appendChild(tdHole);
+
+      for (let p=0;p<4;p++){
+        const td = document.createElement("td");
+        const inp = document.createElement("input");
+        inp.className = "num";
+        inp.type = "tel";
+        inp.inputMode = "numeric";
+        inp.pattern = "[0-9]*";
+        inp.value = side.strokes[absIdx][p] ?? "";
+        inp.addEventListener("input", () => {
+          side.strokes[absIdx][p] = safeInt(inp.value);
+          recalc();
+          save(false);
+        }, {passive:true});
+        td.appendChild(inp);
+        tr.appendChild(td);
+      }
+
+      const mr = matchResultAt(absIdx);
+      if (mr==="〇") matchTotal += 1;
+      if (mr==="×") matchTotal -= 1;
+
+      const tdMatch = document.createElement("td");
+      tdMatch.appendChild(makePill(mr));
+      tr.appendChild(tdMatch);
+
+      const tp = team.points[absIdx];
+      teamTotal += tp;
+
+      const tdTeam = document.createElement("td");
+      tdTeam.appendChild(makePill(team.display[absIdx] || "—"));
+      tr.appendChild(tdTeam);
+
+      for (let p=0;p<4;p++){
+        const v = side.strokes[absIdx][p];
+        if (v!=null) sumS[p] += v;
+      }
+
+      tbody.appendChild(tr);
+    }
+
+    $("sumS0").textContent = sumS[0];
+    $("sumS1").textContent = sumS[1];
+    $("sumS2").textContent = sumS[2];
+    $("sumS3").textContent = sumS[3];
+    $("matchTotalInRow").textContent = matchTotal;
+    $("teamTotalInRow").textContent = teamTotal;
+  }
+
+  function renderPage2(){
+    const order = holeOrder();
+    const side = current();
+    const tbody = $("oplvTbody");
+    tbody.innerHTML = "";
+
+    const sumOP = [0,0,0,0];
+    const sumLV = [0,0,0,0];
+
+    for (const absIdx of order){
+      const tr = document.createElement("tr");
+
+      const tdHole = document.createElement("td");
+      tdHole.className = "holeCell";
+      tdHole.textContent = "hole" + (absIdx + 1);
+      tr.appendChild(tdHole);
+
+      for (let p=0;p<4;p++){
+        // OP
+        {
+          const td = document.createElement("td");
+          const inp = document.createElement("input");
+          inp.className = "num";
+          inp.type = "tel";
+          inp.inputMode = "numeric";
+          inp.pattern = "[0-9]*";
+          inp.value = side.op[absIdx][p] ?? "";
+          inp.addEventListener("input", () => {
+            side.op[absIdx][p] = safeInt(inp.value);
+            renderPage2Totals();
+            save(false);
+          }, {passive:true});
+          td.appendChild(inp);
+          tr.appendChild(td);
+        }
+        // LV
+        {
+          const td = document.createElement("td");
+          const inp = document.createElement("input");
+          inp.className = "num";
+          inp.type = "tel";
+          inp.inputMode = "numeric";
+          inp.pattern = "[0-9]*";
+          inp.value = side.lv[absIdx][p] ?? "";
+          inp.addEventListener("input", () => {
+            side.lv[absIdx][p] = safeInt(inp.value);
+            renderPage2Totals();
+            save(false);
+          }, {passive:true});
+          td.appendChild(inp);
+          tr.appendChild(td);
+        }
+      }
+      tbody.appendChild(tr);
+    }
+
+    renderPage2Totals();
+
+    function renderPage2Totals(){
+      const sumOP2 = [0,0,0,0];
+      const sumLV2 = [0,0,0,0];
+      for (let i=0;i<HOLES;i++){
+        for (let p=0;p<4;p++){
+          const op = side.op[i][p];
+          const lv = side.lv[i][p];
+          if (op!=null) sumOP2[p] += op;
+          if (lv!=null) sumLV2[p] += lv;
+        }
+      }
+      $("sumOP0").textContent = sumOP2[0];
+      $("sumOP1").textContent = sumOP2[1];
+      $("sumOP2").textContent = sumOP2[2];
+      $("sumOP3").textContent = sumOP2[3];
+
+      $("sumLV0").textContent = sumLV2[0];
+      $("sumLV1").textContent = sumLV2[1];
+      $("sumLV2").textContent = sumLV2[2];
+      $("sumLV3").textContent = sumLV2[3];
+    }
+  }
+
+  function setStart(s){
+    state.start = s;
+    $("btnOut").classList.toggle("active", s==="out");
+    $("btnIn").classList.toggle("active", s==="in");
+    recalc();
+    autoCollapseHeader();
+  }
+
+  function setPage(p){
+    state.page = p;
+    $("page1Btn").classList.toggle("active", p===1);
+    $("page2Btn").classList.toggle("active", p===2);
+    $("page1").style.display = p===1 ? "" : "none";
+    $("page2").style.display = p===2 ? "" : "none";
+    recalc();
+    autoCollapseHeader();
+  }
+
+  function recalc(){
+    if (state.page === 1) renderPage1();
+    else renderPage2();
+  }
+
+  function setHeaderCollapsed(on){
+    state.headerCollapsed = !!on;
+    document.body.classList.toggle("headerCollapsed", state.headerCollapsed);
+    save(false);
+  }
+
+  function autoCollapseHeader(){
+    const dateOk = !!(state.meta.date && state.meta.date.trim());
+    const courseOk = !!(state.meta.course && state.meta.course.trim());
+    if (dateOk && courseOk){
+      setHeaderCollapsed(true);
+    }
+  }
+
+  function save(showToast){
+    try{
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      if (showToast) alert("保存しました（端末内）");
+    }catch{
+      if (showToast) alert("保存に失敗しました");
+    }
+  }
+  function load(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return false;
+      const obj = JSON.parse(raw);
+      if (!obj || !obj.out || !obj.in || !obj.meta) return false;
+      state = obj;
+      return true;
+    }catch{ return false; }
+  }
+
+  function printAll(){
+    const wrap = document.querySelector(".wrap");
+    const header = document.querySelector(".headerCard");
+    const page1 = $("page1");
+    const page2 = $("page2");
+
+    const prevStart = state.start;
+    const prevPage  = state.page;
+    const prevCollapsed = state.headerCollapsed;
+
+    setHeaderCollapsed(false);
+
+    const host = document.createElement("div");
+    host.className = "printOnly";
+    host.id = "printHost";
+    host.style.padding = "12px";
+
+    function cloneHeader(label){
+      const h = header.cloneNode(true);
+      const badge = document.createElement("div");
+      badge.style.fontWeight = "1000";
+      badge.style.margin = "8px 0 10px";
+      badge.style.color = "#0b3d2e";
+      badge.textContent = label;
+      h.appendChild(badge);
+      h.querySelectorAll("input").forEach(inp => inp.setAttribute("value", inp.value ?? ""));
+      return h;
+    }
+    function cloneCard(el){
+      const c = el.cloneNode(true);
+      c.querySelectorAll("input").forEach(inp => inp.setAttribute("value", inp.value ?? ""));
+      return c;
+    }
+
+    wrap.classList.add("noPrint");
+
+    ["out","in"].forEach((s, idx) => {
+      setStart(s);
+
+      setPage(1); recalc();
+      host.appendChild(cloneHeader(s==="out" ? "アウトスタート（1枚目）" : "インスタート（1枚目）"));
+      host.appendChild(cloneCard(page1));
+
+      setPage(2); recalc();
+      const h2 = document.createElement("div");
+      h2.style.fontWeight = "1000";
+      h2.style.margin = "12px 0 8px";
+      h2.style.color = "#0b3d2e";
+      h2.textContent = s==="out" ? "アウトスタート（2枚目：OP/LV）" : "インスタート（2枚目：OP/LV）";
+      host.appendChild(h2);
+      host.appendChild(cloneCard(page2));
+
+      if (idx === 0){
+        const br = document.createElement("div");
+        br.className = "pageBreak";
+        host.appendChild(br);
+      }
+    });
+
+    document.body.prepend(host);
+    window.print();
+
+    setTimeout(() => {
+      host.remove();
+      wrap.classList.remove("noPrint");
+      setStart(prevStart);
+      setPage(prevPage);
+      setHeaderCollapsed(prevCollapsed);
+      recalc();
+    }, 300);
+  }
+
+  // ===== init =====
+  if (!load()){
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    state.meta.date = `${yyyy}-${mm}-${dd}`;
+    state.headerCollapsed = false;
+  }
+
+  $("date").value = state.meta.date || "";
+  $("course").value = state.meta.course || "";
+
+  $("btnOut").addEventListener("click", () => setStart("out"));
+  $("btnIn").addEventListener("click", () => setStart("in"));
+  $("page1Btn").addEventListener("click", () => setPage(1));
+  $("page2Btn").addEventListener("click", () => setPage(2));
+
+  $("date").addEventListener("input", () => { state.meta.date = $("date").value; save(false); autoCollapseHeader(); });
+  $("course").addEventListener("input", () => { state.meta.course = $("course").value; save(false); autoCollapseHeader(); });
+
+  $("settingsBtn").addEventListener("click", () => setHeaderCollapsed(false));
+
+  $("fillParBtn").addEventListener("click", () => {
+    const s = current();
+    for (let i=0;i<HOLES;i++){
+      for (let p=0;p<4;p++){
+        if (s.strokes[i][p] == null) s.strokes[i][p] = 4;
+      }
+    }
+    recalc(); save(true);
+    autoCollapseHeader();
+  });
+
+  $("clearScoresBtn").addEventListener("click", () => {
+    if (!confirm("1枚目（スコア/マッチ/チーム）をリセットしますか？")) return;
+    current().strokes = Array.from({length:HOLES}, () => [null,null,null,null]);
+    recalc(); save(true);
+  });
+
+  $("clearOpLvBtn").addEventListener("click", () => {
+    if (!confirm("2枚目（OP/LV）をリセットしますか？")) return;
+    current().op = Array.from({length:HOLES}, () => [null,null,null,null]);
+    current().lv = Array.from({length:HOLES}, () => [null,null,null,null]);
+    recalc(); save(true);
+  });
+
+  $("saveBtn").addEventListener("click", () => save(true));
+  $("clearAllBtn").addEventListener("click", () => {
+    if (!confirm("全データ（アウト/イン・1/2枚目）を消しますか？")) return;
+    state.out = makeEmptySide();
+    state.in  = makeEmptySide();
+    setHeaderCollapsed(false);
+    recalc(); save(true);
+  });
+
+  $("printAllBtn").addEventListener("click", () => printAll());
+
+  // restore
+  document.body.classList.toggle("headerCollapsed", !!state.headerCollapsed);
+  setStart(state.start || "out");
+  setPage(state.page || 1);
+  recalc();
+  autoCollapseHeader();
+})();
+</script>
+
+<!-- Service Worker登録 -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js");
+    });
+  }
+</script>
+</body>
+</html>
