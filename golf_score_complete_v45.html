@@ -12,7 +12,7 @@
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>ゴルフスコア v42（PDF保存修正版/PWA対応）</title>
+  <title>ゴルフスコア v45（M列見切れ修正版 / PDF保存 / PWA対応）</title>
 
   <!-- PDF生成（印刷ではなく保存） -->
   <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
@@ -213,27 +213,27 @@ if ('serviceWorker' in navigator) {
       background:#fff;
       font-weight:900;
     }
-     .holeCol{ width:38px; min-width:38px; }
-    .scoreCol{ width:30px; min-width:30px; }
-    .olyCol{ width:38px; min-width:38px; }
-    .vegasCol{ width:30px; min-width:30px; }
+     .holeCol{ width:34px; min-width:34px; }
+    .scoreCol{ width:28px; min-width:28px; }
+    .olyCol{ width:34px; min-width:34px; }
+    .vegasCol{ width:26px; min-width:26px; }
     
 .narrowCol{
-  width:60px;
-  min-width:60px;
-  font-size:10px;
+  width:54px;
+  min-width:54px;
+  font-size:9px;
   text-align:center;
 }
 .matchHdr,.teamHdr{
   font-size:10px;
 }
 .nameHdr span{
-  font-size:14px;
+  font-size:12px;
   font-weight:800;
   line-height:1;
 }
 .gamesTable thead th{
-  font-size:11px;
+  font-size:10px;
 }
 
 
@@ -244,8 +244,8 @@ if ('serviceWorker' in navigator) {
     }
     
 .scoreInput{
-  width:28px;
-  min-width:28px;
+  width:26px;
+  min-width:26px;
   height:20px;
   padding:0;
   font-size:10px;
@@ -254,21 +254,21 @@ if ('serviceWorker' in navigator) {
   border-radius:4px;
 }
 .olyInput{
-  width:36px;
-  min-width:36px;
+  width:32px;
+  min-width:32px;
 }
 .vegasInput{
-  width:27px;
-  min-width:27px;
-  font-size:9px;
+  width:23px;
+  min-width:23px;
+  font-size:8px;
 }
 
     .scoreInput::-webkit-outer-spin-button,
     .scoreInput::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
     
 .scoreInput{
-  width:28px;
-  min-width:28px;
+  width:26px;
+  min-width:26px;
   height:20px;
   padding:0;
   font-size:10px;
@@ -277,31 +277,33 @@ if ('serviceWorker' in navigator) {
   border-radius:4px;
 }
 .olyInput{
-  width:36px;
-  min-width:36px;
+  width:32px;
+  min-width:32px;
 }
 .vegasInput{
-  width:27px;
-  min-width:27px;
-  font-size:9px;
+  width:23px;
+  min-width:23px;
+  font-size:8px;
 }
 
 
 
     .nameHdr{
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
-      gap:4px;
+      gap:1px;
+      line-height:1;
     }
     .ordInput{
-      width:12px;
-      min-width:12px;
-      height:12px;
+      width:11px;
+      min-width:11px;
+      height:11px;
       padding:0;
       border:1px solid var(--border);
       border-radius:3px;
-      font-size:7px;
+      font-size:6px;
       text-align:center;
     }
     .ordInput::-webkit-outer-spin-button,
@@ -311,7 +313,7 @@ if ('serviceWorker' in navigator) {
     /* バーディーチェック（入力中Holeだけ表示） */
     .birdieWrap{
       position:absolute;
-      right:2px;
+      left:-2px;
       bottom:2px;
       display:none;
       align-items:center;
@@ -477,54 +479,54 @@ if ('serviceWorker' in navigator) {
     padding:0;
   }
   .holeCol{
-    width:34px;
-    min-width:34px;
+    width:32px;
+    min-width:32px;
   }
   .scoreCol{
-    width:27px;
-    min-width:27px;
+    width:26px;
+    min-width:26px;
   }
   .olyCol{
-    width:36px;
-    min-width:36px;
+    width:31px;
+    min-width:31px;
   }
   .vegasCol{
-    width:28px;
-    min-width:28px;
+    width:22px;
+    min-width:22px;
   }
   .scoreInput{
-    width:25px;
-    min-width:25px;
+    width:24px;
+    min-width:24px;
     height:18px;
     font-size:9px;
     border-radius:3px;
   }
   .olyInput{
-    width:35px;
-    min-width:35px;
-    height:19px;
-    font-size:10px;
+    width:30px;
+    min-width:30px;
+    height:18px;
+    font-size:9px;
   }
   .vegasInput{
-    width:24px;
-    min-width:24px;
-    height:18px;
-    font-size:8px;
+    width:21px;
+    min-width:21px;
+    height:17px;
+    font-size:7px;
   }
   .ordInput{
-    width:10px;
-    min-width:10px;
-    height:10px;
+    width:9px;
+    min-width:9px;
+    height:9px;
     font-size:6px;
     border-radius:2px;
   }
   .narrowCol{
-    width:56px;
-    min-width:56px;
-    font-size:9px;
+    width:48px;
+    min-width:48px;
+    font-size:8px;
   }
   .matchHdr,.teamHdr{
-    font-size:9px;
+    font-size:8px;
   }
   .scrollHint{
     font-size:10px;
@@ -533,19 +535,19 @@ if ('serviceWorker' in navigator) {
     min-width:100%;
   }
   .gamesTable{
-    min-width:560px;
+    min-width:500px;
   }
   .nameHdr{
-    gap:0;
+    gap:1px;
   }
   .nameHdr span{
-    font-size:12px;
+    font-size:10px;
   }
   .birdieWrap{
-    right:0;
+    left:-1px;
     bottom:0;
     gap:1px;
-    font-size:8px;
+    font-size:7px;
     padding:0 1px;
   }
   .birdieWrap input{
@@ -616,7 +618,7 @@ if ('serviceWorker' in navigator) {
 
 <!-- 1枚目 -->
     <h2 class="sectTit">スコア / マッチ / チーム戦</h2>
-      <div class="scrollHint">← 横スクロールでマッチ・チーム戦まで見られます →</div>
+      <div class="scrollHint">← M列が見切れないよう幅調整済み。必要時のみ横スクロール →</div>
     <section id="viewScore">
       <div class="tableWrap scoreWrap">
         <table id="scoreTable" class="scrollTable scoreTable">
@@ -670,7 +672,7 @@ if ('serviceWorker' in navigator) {
 
     <!-- 2枚目 -->
     <h2 class="sectTit">オリンピック / ラスベガス</h2>
-      <div class="scrollHint">← 横スクロールでラスベガスまで見られます →</div>
+      <div class="scrollHint">← 幅を詰めて見やすく調整。必要時のみ横スクロール →</div>
     <section id="viewGames">
       <div class="tableWrap gamesWrap">
         <table id="gamesTable" class="scrollTable gamesTable">
