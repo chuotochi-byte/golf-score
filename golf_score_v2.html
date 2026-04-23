@@ -1,0 +1,2581 @@
+<!doctype html>
+<html lang="ja">
+<head>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ゴルフスコア">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>ゴルフスコア v1</title>
+
+  <!-- PDF生成（印刷ではなく保存） -->
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script>
+// ==== Dormie 判定 ====
+// IIFE内のapplyDormieInner()に委譲（グローバルからも呼べるようにラップ）
+function applyDormie(){
+  if(window.applyDormieInner) window.applyDormieInner();
+}
+
+
+function exportPDF(){
+  const element = document.body;
+  const opt = {
+    margin:       0.5,
+    filename:     'golf_scorecard.pdf',
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+}
+
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });
+}
+
+</script>
+
+  <style>
+    :root{
+      --border:#111;
+      --bg:#fff;
+      --cellH:38px;
+      --font:20px;
+      --red:#d40000;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+      background:var(--bg);
+      color:#000;
+      font-size:var(--font);
+    }
+    .wrap{
+      padding:8px 6px calc(66px + env(safe-area-inset-bottom)) 6px;
+    }
+
+    /* 初期設定 */
+    .setup{
+      border:1px solid var(--border);
+      padding:8px;
+      margin-bottom:10px;
+    }
+    .setup.small{
+      padding:6px;
+      font-size:12px;
+      opacity:.9;
+    }
+    .row{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .row > label{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      white-space:nowrap;
+    }
+    input[type="text"], input[type="date"], select{
+      height:30px;
+      padding:0 6px;
+      border:1px solid var(--border);
+      border-radius:6px;
+      font-size:13px;
+      background:#fff;
+      min-width:96px;
+    }
+    .nameBox input{ width:56px; min-width:56px; text-align:center; }
+
+    .btn{
+      height:32px;
+      padding:0 10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#fff;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .btn:active{ transform:translateY(1px); }
+
+    /* メイン表示 */
+    .topline{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-end;
+      margin-bottom:8px;
+    }
+    .meta{
+      font-size:12px;
+      line-height:1.2;
+      white-space:nowrap;
+    }
+    .meta strong{ font-size:14px; }
+
+    
+    .sectTit{
+      margin:10px 0 6px;
+      font-size:14px;
+      font-weight:800;
+    }
+.tabs{
+      display:flex;
+      gap:8px;
+      margin-bottom:8px;
+    }
+    .tab{
+      flex:0 0 auto;
+      height:34px;
+      padding:0 12px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:#fff;
+      cursor:pointer;
+      font-weight:700;
+    }
+    .tab.active{ background:#000; color:#fff; }
+
+    .tableWrap{
+      overflow-x:auto;
+      overflow-y:visible;
+      border:1px solid var(--border);
+      -webkit-overflow-scrolling:touch;
+    }
+    .scrollTable{
+      border-collapse:collapse;
+      width:max-content;
+      min-width:100%;
+      table-layout:fixed;
+    }
+    table{
+      border-collapse:collapse;
+      width:max-content;
+      min-width:100%;
+      table-layout:fixed;
+    }
+    .scoreTable{
+      min-width:max-content;
+    }
+    .gamesTable{
+      min-width:max-content;
+    }
+    .scrollHint{
+      font-size:var(--font);
+      color:#555;
+      margin:-2px 0 6px;
+    }
+    th, td{
+      border:1px solid var(--border);
+      padding:0;
+      height:var(--cellH);
+      text-align:center;
+      vertical-align:middle;
+      white-space:nowrap;
+    }
+    th{
+      font-weight:800;
+      padding:0 4px;
+    }
+    .sticky{
+      position:sticky;
+      left:0;
+      z-index:3;
+      background:#fff;
+    }
+    .sticky2{
+      position:sticky;
+      left:0;
+      z-index:4;
+      background:#fff;
+      font-weight:900;
+    }
+     .holeCol{ width:70px; min-width:70px; }
+    .scoreCol{ width:38px; min-width:38px; height:var(--cellH); padding:0; position:relative; }
+    .olyCol{ width:38px; min-width:38px; height:var(--cellH); padding:0; position:relative; }
+    .vegasCol{ width:38px; min-width:38px; height:var(--cellH); padding:0; position:relative; }
+    
+.narrowCol{
+  width:60px;
+  min-width:60px;
+  font-size:var(--font);
+  text-align:center;
+}
+.matchHdr,.teamHdr{
+  font-size:var(--font);
+}
+.nameHdr span{
+  font-size:var(--font);
+  font-weight:800;
+  line-height:1;
+}
+.gamesTable thead th{
+  font-size:var(--font);
+}
+
+
+    .scoreCell{
+      position:relative;
+      width:100%;
+      height:100%;
+      display:block;
+    }
+    
+.scoreInput{
+  width:100%;
+  min-width:0;
+  height:100%;
+  padding:0;
+  font-size:var(--font);
+  font-weight:700;
+  text-align:center;
+  border:1px solid var(--border);
+  border-radius:0;
+  box-sizing:border-box;
+}
+.olyInput{
+  width:100%;
+  min-width:0;
+  height:100%;
+  padding:0;
+  font-size:var(--font);
+  font-weight:700;
+  text-align:center;
+  border:1px solid var(--border);
+  border-radius:0;
+  box-sizing:border-box;
+}
+.vegasInput{
+  width:100%;
+  min-width:0;
+  height:100%;
+  padding:0;
+  font-size:var(--font);
+  font-weight:700;
+  text-align:center;
+  border:1px solid var(--border);
+  border-radius:0;
+  box-sizing:border-box;
+}
+
+    .scoreInput::-webkit-outer-spin-button,
+    .scoreInput::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+    
+
+
+
+
+    .nameHdr{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      width:100%;
+    }
+    .trophySlot{
+      position:absolute;
+      left:2px;
+      font-size:var(--font);
+      line-height:1;
+    }
+    .ordInput{
+      width:36px;
+      min-width:36px;
+      height:36px;
+      padding:0;
+      border:1px solid var(--border);
+      border-radius:6px;
+      font-size:var(--font);
+      font-weight:700;
+      text-align:center;
+    }
+    .ordInput::-webkit-outer-spin-button,
+    .ordInput::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+    .ordInput{ -moz-appearance:textfield; }
+
+    /* バーディーチェック（入力中Holeだけ表示） */
+    .birdieWrap{
+      position:absolute;
+      left:50%;
+      bottom:0;
+      transform:translate(-50%, 50%);
+      display:none;
+      align-items:center;
+      gap:2px;
+      font-size:var(--font);
+      line-height:1;
+      background:#fff;
+      padding:0 2px;
+      border:1px solid var(--border);
+      border-radius:4px;
+      opacity:.97;
+      z-index:6;
+    }
+    .birdieWrap input{ width:14px; height:14px; }
+
+    /* チーム戦 ハンデ（幸&Mに-1） */
+    .hcWrap{
+      display:inline-flex;
+      align-items:center;
+      gap:2px;
+      margin-left:0;
+      font-size:calc(var(--font) * 0.7);
+      font-weight:700;
+    }
+    .hcWrap input{ width:14px; height:14px; }
+
+    .resWin{ color:#d40000; font-weight:800; }
+    .resLose{ color:#0066cc; font-weight:800; }
+    .resTie{ color:#666; font-weight:700; }
+
+    /* ドーミーホール：背景赤＋スコア文字赤 */
+    /* ドーミーホール：Hole欄を赤、スコア文字を赤 */
+    tr.dormie td{
+      background:#f4b1b1;
+    }
+    tr.dormie th{
+      background:#d40000 !important;
+      color:#fff !important;
+    }
+    tr.dormie .scoreInput,
+    tr.dormie .olyInput,
+    tr.dormie .vegasInput{
+      color:#d40000;
+      font-weight:900;
+    }
+    /* アップドーミーホール：Hole欄を青、スコア文字を青 */
+    tr.up-dormie td{
+      background:#b1d4f4;
+    }
+    tr.up-dormie th{
+      background:#0055cc !important;
+      color:#fff !important;
+    }
+    tr.up-dormie .scoreInput,
+    tr.up-dormie .olyInput,
+    tr.up-dormie .vegasInput{
+      color:#0055cc;
+      font-weight:900;
+    }
+
+
+    .sumline{
+      margin-top:6px;
+      font-size:var(--font);
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .sumchip{
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:3px 8px;
+      font-weight:700;
+      background:#fff;
+      white-space:nowrap;
+    }
+
+    /* 下固定バー */
+    .bottomBar{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      padding:10px;
+      padding-bottom:calc(10px + env(safe-area-inset-bottom));
+      background:#fff;
+      border-top:1px solid var(--border);
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      z-index:10;
+    }
+    .bottomBar .btn{
+      flex:1 1 0;
+      height:44px;
+      border-radius:14px;
+      font-size:16px;
+    }
+
+    /* PDF用 */
+    .pdfStage{
+      position:absolute;
+      left:0;
+      top:0;
+      width:794px; /* A4 */
+      opacity:0;
+      pointer-events:none;
+      z-index:-1;
+    }
+    .pdfPage{
+      width:794px;
+      min-height:auto;
+      padding:22px 24px 18px;
+      background:#fff;
+      color:#000;
+    }
+    .pdfTitle{
+      font-size:18px;
+      font-weight:900;
+      margin:0 0 10px 0;
+      line-height:1.2;
+    }
+    .pdfMeta{
+      font-size:12px;
+      margin:0 0 12px 0;
+      line-height:1.3;
+    }
+    .pdfPage .tableWrap{
+      overflow:visible;
+      border:1px solid var(--border);
+      margin:0 0 12px 0;
+    }
+    .pdfPage table{
+      width:100%;
+      min-width:0;
+      table-layout:fixed;
+    }
+    .pdfPage th,
+    .pdfPage td{
+      height:17px;
+      font-size:8.5px;
+      padding:0 2px;
+    }
+    .pdfPage .holeCol{ width:40px; min-width:40px; }
+    .pdfPage .scoreCol{ width:41px; min-width:41px; }
+    .pdfPage .narrowCol{ width:56px; min-width:56px; }
+    .pdfSectionTitle{
+      font-size:11px;
+      font-weight:800;
+      margin:0 0 5px 0;
+      line-height:1.2;
+    }
+  
+@media (max-width:480px){
+  :root{
+    --cellH:36px;
+    --font:18px;
+  }
+  body{ font-size:10px; }
+  .wrap{ padding:6px 4px calc(64px + env(safe-area-inset-bottom)) 4px; }
+  .topline{ gap:6px; margin-bottom:6px; }
+  .meta{ font-size:10px; }
+  .meta strong{ font-size:12px; }
+  .sectTit{ margin:8px 0 4px; font-size:12px; }
+  .tableWrap{ overflow-x:auto; }
+  table{ font-size:var(--font); }
+  th, td{ padding:0; }
+
+  /* ========= スコア表：Hole+4人は画面内固定、マッチ・チーム戦は横スクロール ========= */
+  .scoreWrap{ overflow-x:auto !important; -webkit-overflow-scrolling:touch; }
+
+  /* テーブル全体：固定幅で画面に収まる5列＋マッチチームがはみ出す */
+  .scoreTable{
+    width:max-content !important;
+    table-layout:fixed !important;
+  }
+
+  /* sticky解除してサイズ固定 */
+  .scoreTable th.sticky2,
+  .scoreTable th.sticky { position:static !important; }
+
+  /* Hole列：☑Hc+番号が1行に入る幅 */
+  .scoreTable .holeCol{
+    width:70px !important;
+    min-width:70px !important;
+    max-width:70px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    font-size:var(--font) !important;
+  }
+  .scoreTable .holeCol .hcWrap{
+    font-size:calc(var(--font) * 0.65) !important;
+    gap:1px !important;
+    margin-left:0 !important;
+  }
+  .scoreTable .holeCol .hcWrap input{ width:12px !important; height:12px !important; }
+
+  /* スコア4列：残り幅を4等分 */
+  .scoreTable .scoreCol{
+    width:calc((100vw - 70px) / 4) !important;
+    min-width:0 !important;
+    max-width:calc((100vw - 70px) / 4) !important;
+  }
+
+  /* 打順inputをスコア列幅に収める */
+  .scoreTable .nameHdr{ gap:0 !important; justify-content:center !important; }
+  .scoreTable .ordInput{ width:100% !important; min-width:0 !important; height:var(--cellH) !important; font-size:var(--font) !important; font-weight:700 !important; box-sizing:border-box !important; }
+
+  /* マッチ・チーム列：固定幅ではみ出す */
+  .scoreTable .narrowCol{
+    display:table-cell !important;
+    width:52px !important;
+    min-width:52px !important;
+    font-size:var(--font) !important;
+  }
+
+  /* 入力欄 */
+  .scoreTable .scoreInput{
+    width:100% !important;
+    min-width:0 !important;
+    height:100% !important;
+    font-size:var(--font) !important;
+    box-sizing:border-box !important;
+  }
+
+  /* ======================================================== */
+
+  /* gamesTable：olyCol・vegasColをscoreColと同じ幅・高さに */
+  .gamesTable th.sticky2,
+  .gamesTable th.sticky { position:static !important; }
+
+  .gamesTable .holeCol{
+    width:52px !important;
+    min-width:52px !important;
+    max-width:52px !important;
+    font-size:var(--font) !important;
+  }
+  .gamesTable .olyCol{
+    width:calc((100vw - 52px) / 4) !important;
+    min-width:0 !important;
+    max-width:calc((100vw - 52px) / 4) !important;
+    height:var(--cellH) !important;
+    padding:0 !important;
+    position:relative !important;
+  }
+  .gamesTable .vegasCol{
+    width:calc((100vw - 52px) / 4) !important;
+    min-width:0 !important;
+    max-width:calc((100vw - 52px) / 4) !important;
+    height:var(--cellH) !important;
+    padding:0 !important;
+    position:relative !important;
+  }
+  .gamesTable .scoreCell{
+    width:100% !important;
+    height:var(--cellH) !important;
+    display:block !important;
+  }
+  .gamesTable .olyInput,
+  .gamesTable .vegasInput{
+    width:100% !important;
+    height:100% !important;
+    font-size:var(--font) !important;
+    font-weight:700 !important;
+    text-align:center !important;
+    border:1px solid var(--border) !important;
+    padding:0 !important;
+    box-sizing:border-box !important;
+  }
+
+  .holeCol{ width:70px; min-width:70px; }
+  .scoreCol{ width:36px; min-width:36px; height:var(--cellH); padding:0; position:relative; }
+  .olyCol{ width:calc((100vw - 52px) / 4) !important; min-width:0 !important; max-width:calc((100vw - 52px) / 4) !important; height:var(--cellH); padding:0; position:relative; }
+  .vegasCol{ width:calc((100vw - 52px) / 4) !important; min-width:0 !important; max-width:calc((100vw - 52px) / 4) !important; height:var(--cellH); padding:0; position:relative; }
+  .scoreInput{ width:100%; min-width:0; height:100%; padding:0; font-size:var(--font); font-weight:700; text-align:center; border:1px solid var(--border); border-radius:0; box-sizing:border-box; }
+  .olyInput, .vegasInput{ width:100%; min-width:0; height:100%; padding:0; font-size:var(--font); font-weight:700; text-align:center; border:1px solid var(--border); border-radius:0; box-sizing:border-box; }
+  .ordInput{ width:34px; min-width:34px; height:34px; font-size:var(--font); font-weight:700; border-radius:5px; }
+  .narrowCol{ width:56px; min-width:56px; font-size:var(--font); }
+  .matchHdr,.teamHdr{ font-size:var(--font); }
+  .scrollHint{ font-size:var(--font); }
+  .gamesTable{ min-width:max-content; }
+  .nameHdr{ gap:0; }
+  .nameHdr span{ font-size:var(--font); }
+  .birdieWrap{
+    left:50%; bottom:0; transform:translate(-50%,50%);
+    gap:1px; font-size:var(--font); padding:0 1px; z-index:6;
+  }
+  .birdieWrap input{ width:10px; height:10px; }
+  .btn{ height:30px; padding:0 8px; font-size:12px; }
+  input[type="text"], input[type="date"], select{
+    height:28px; min-width:82px; font-size:12px;
+  }
+  .nameBox input{ width:46px; min-width:46px; }
+  .sumline{ gap:4px; font-size:10px; }
+  .sumchip{ padding:2px 6px; }
+  .bottomBar{ gap:8px; padding:8px; }
+  .bottomBar .btn{ height:40px; font-size:14px; }
+}
+
+
+/* ===== カスタムモーダル ===== */
+.modal-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.45);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+}
+.modal-overlay.show{ display:flex; }
+.modal-box{
+  background:#fff;
+  border-radius:14px;
+  padding:24px 20px 16px;
+  max-width:320px;
+  width:90%;
+  box-shadow:0 8px 32px rgba(0,0,0,0.22);
+  text-align:center;
+}
+.modal-msg{
+  font-size:var(--font);
+  font-weight:600;
+  line-height:1.5;
+  margin-bottom:18px;
+  color:#111;
+  white-space:pre-wrap;
+}
+.modal-btns{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+}
+.modal-btns button{
+  flex:1;
+  height:42px;
+  border-radius:10px;
+  border:1px solid #111;
+  font-size:var(--font);
+  font-weight:700;
+  cursor:pointer;
+  background:#fff;
+}
+.modal-btns .modal-ok{ background:#111; color:#fff; }
+</style>
+</head>
+
+<body>
+
+<!-- カスタムモーダル -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-btns" id="modalBtns"></div>
+  </div>
+</div>
+  <div class="wrap">
+    <!-- 初期設定 -->
+    <section id="setup" class="setup">
+      <div class="row" style="margin-bottom:8px;">
+        <label>日付 <input id="date" type="date"></label>
+        <label>ゴルフ場 <input id="course" type="text" placeholder="例：○○GC"></label>
+</div>
+
+      <div class="row nameBox" style="margin-bottom:8px;">
+        <label>増 <input id="n1" type="text" value="増"></label>
+        <label>幸 <input id="n2" type="text" value="幸"></label>
+        <label>牛 <input id="n3" type="text" value="牛"></label>
+        <label>M <input id="n4" type="text" value="M"></label>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="finishSetup">初期設定 完了</button>
+        <button class="btn" id="resetAll" title="全入力を消します">全リセット</button>
+      </div>
+    </section>
+
+    <!-- メタ -->
+    <div class="topline">
+      <div class="meta" id="meta"></div>
+      <div class="meta"><strong id="halfLabel">OUT</strong> <button class="btn" id="toggleHalf" style="padding:6px 10px;font-size:12px;">INへ切替</button></div>
+    </div>
+
+    <!-- タブ切替ボタン -->
+    <div class="tabs" id="viewTabs">
+      <button class="tab active" id="tabScore" onclick="switchTab('score')">スコア</button>
+      <button class="tab" id="tabOly" onclick="switchTab('oly')">オリンピック</button>
+      <button class="tab" id="tabVegas" onclick="switchTab('vegas')">ラスベガス</button>
+      <button class="tab" id="tabMatch" onclick="switchTab('match')">マッチ/チーム</button>
+    </div>
+
+<!-- スコア -->
+    <section id="viewScore">
+      <div class="tableWrap scoreWrap">
+        <table id="scoreTable" class="scrollTable scoreTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">打順</th>
+              <th class="scoreCol"><input id="ord1" class="ordInput" type="text" inputmode="numeric" pattern="[0-9]*" value="" aria-label="打順(増)"></th>
+              <th class="scoreCol"><input id="ord2" class="ordInput" type="text" inputmode="numeric" pattern="[0-9]*" value="" aria-label="打順(幸)"></th>
+              <th class="scoreCol"><input id="ord3" class="ordInput" type="text" inputmode="numeric" pattern="[0-9]*" value="" aria-label="打順(牛)"></th>
+              <th class="scoreCol"><input id="ord4" class="ordInput" type="text" inputmode="numeric" pattern="[0-9]*" value="" aria-label="打順(M)"></th>
+            </tr>
+            <tr>
+              <th class="sticky2 holeCol">Hole</th>
+              <th class="scoreCol"><div class="nameHdr"><span class="trophySlot" id="trophy1"></span><span class="scoreName" id="th1">増</span></div></th>
+              <th class="scoreCol"><div class="nameHdr"><span class="trophySlot" id="trophy2"></span><span class="scoreName" id="th2">幸</span></div></th>
+              <th class="scoreCol"><div class="nameHdr"><span class="scoreName" id="th3">牛</span></div></th>
+              <th class="scoreCol"><div class="nameHdr"><span class="scoreName" id="th4">M</span></div></th>
+            </tr>
+          </thead>
+          <tbody id="scoreBody"></tbody>
+          <tfoot>
+            <tr>
+              <th class="sticky2">合計</th>
+              <td id="tSum1"></td><td id="tSum2"></td><td id="tSum3"></td><td id="tSum4"></td>
+            </tr>
+            <tr>
+              <th class="sticky2">OUT小計</th>
+              <td id="tOut1"></td><td id="tOut2"></td><td id="tOut3"></td><td id="tOut4"></td>
+            </tr>
+            <tr>
+              <th class="sticky2">IN小計</th>
+              <td id="tIn1"></td><td id="tIn2"></td><td id="tIn3"></td><td id="tIn4"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+<!-- マッチ/チーム -->
+    <section id="viewMatch" style="display:none;">
+      <div class="tableWrap scoreWrap">
+        <table class="scrollTable scoreTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">Hole</th>
+              <th class="narrowCol">マッチ</th>
+              <th class="narrowCol">チーム</th>
+              <th class="scoreCol" id="mth1">増</th>
+              <th class="scoreCol" id="mth2">幸</th>
+              <th class="scoreCol" id="mth3">牛</th>
+              <th class="scoreCol" id="mth4">M</th>
+            </tr>
+          </thead>
+          <tbody id="matchBody"></tbody>
+          <tfoot>
+            <tr>
+              <th class="sticky2">合計</th>
+              <td id="mMatchSum"></td><td id="mTeamSum"></td>
+              <td id="mSum1"></td><td id="mSum2"></td><td id="mSum3"></td><td id="mSum4"></td>
+            </tr>
+            <tr>
+              <th class="sticky2">OUT小計</th>
+              <td id="mMatchOut"></td><td id="mTeamOut"></td>
+              <td id="mOut1"></td><td id="mOut2"></td><td id="mOut3"></td><td id="mOut4"></td>
+            </tr>
+            <tr>
+              <th class="sticky2">IN小計</th>
+              <td id="mMatchIn"></td><td id="mTeamIn"></td>
+              <td id="mIn1"></td><td id="mIn2"></td><td id="mIn3"></td><td id="mIn4"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+<!-- オリンピック -->
+    <section id="viewOly" style="display:none;">
+      <div class="tableWrap gamesWrap">
+        <table id="olyTable" class="scrollTable gamesTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">Hole</th>
+              <th class="scoreCol olyCol" id="go1">増</th>
+              <th class="scoreCol olyCol" id="go2">幸</th>
+              <th class="scoreCol olyCol" id="go3">牛</th>
+              <th class="scoreCol olyCol" id="go4">M</th>
+            </tr>
+          </thead>
+          <tbody id="olyBody"></tbody>
+          <tfoot>
+            <tr>
+              <th class="sticky2">合計</th>
+              <td id="oSum1"></td><td id="oSum2"></td><td id="oSum3"></td><td id="oSum4"></td>
+            </tr>
+            <tr>
+              <th class="sticky2">OUT小計</th>
+              <td id="oOut1"></td><td id="oOut2"></td><td id="oOut3"></td><td id="oOut4"></td>
+            </tr>
+            <tr>
+              <th class="sticky2">IN小計</th>
+              <td id="oIn1"></td><td id="oIn2"></td><td id="oIn3"></td><td id="oIn4"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+<!-- ラスベガス -->
+    <section id="viewVegas" style="display:none;">
+      <div class="tableWrap gamesWrap">
+        <table id="vegasTable" class="scrollTable gamesTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">Hole</th>
+              <th class="scoreCol vegasCol" id="gv1">増</th>
+              <th class="scoreCol vegasCol" id="gv2">幸</th>
+              <th class="scoreCol vegasCol" id="gv3">牛</th>
+              <th class="scoreCol vegasCol" id="gv4">M</th>
+            </tr>
+          </thead>
+          <tbody id="vegasBody"></tbody>
+          <tfoot>
+            <tr>
+              <th class="sticky2">合計</th>
+              <td id="vSum1"></td><td id="vSum2"></td><td id="vSum3"></td><td id="vSum4"></td>
+            </tr>
+            <tr>
+              <th class="sticky2">OUT小計</th>
+              <td id="vOut1"></td><td id="vOut2"></td><td id="vOut3"></td><td id="vOut4"></td>
+            </tr>
+            <tr>
+              <th class="sticky2">IN小計</th>
+              <td id="vIn1"></td><td id="vIn2"></td><td id="vIn3"></td><td id="vIn4"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- PDF生成用（画面外） -->
+  <div class="pdfStage" id="pdfStage"></div>
+
+  <!-- 下固定バー -->
+  <div class="bottomBar">
+    <button class="btn" id="btnPdf">PDF保存</button>
+    <button class="btn" id="btnClear">入力クリア</button>
+    <button class="btn" id="btnSetup">初期設定へ</button>
+  </div>
+
+<script>
+(() => {
+  const LS_KEY = "golf_roster_v4";
+  const el = (id) => document.getElementById(id);
+
+  // ===== カスタムモーダル（alert/confirm代替） =====
+  function modalAlert(msg, cb){
+    const overlay = document.getElementById("modalOverlay");
+    const msgEl   = document.getElementById("modalMsg");
+    const btnsEl  = document.getElementById("modalBtns");
+    msgEl.textContent = msg;
+    btnsEl.innerHTML = "";
+    const ok = document.createElement("button");
+    ok.className = "modal-ok";
+    ok.textContent = "OK";
+    ok.onclick = () => { overlay.classList.remove("show"); if(cb) cb(); };
+    btnsEl.appendChild(ok);
+    overlay.classList.add("show");
+  }
+  function modalConfirm(msg, onOk, onCancel){
+    const overlay = document.getElementById("modalOverlay");
+    const msgEl   = document.getElementById("modalMsg");
+    const btnsEl  = document.getElementById("modalBtns");
+    msgEl.textContent = msg;
+    btnsEl.innerHTML = "";
+    const cancel = document.createElement("button");
+    cancel.textContent = "キャンセル";
+    cancel.onclick = () => { overlay.classList.remove("show"); if(onCancel) onCancel(); };
+    const ok = document.createElement("button");
+    ok.className = "modal-ok";
+    ok.textContent = "OK";
+    ok.onclick = () => { overlay.classList.remove("show"); if(onOk) onOk(); };
+    btnsEl.appendChild(cancel);
+    btnsEl.appendChild(ok);
+    overlay.classList.add("show");
+  }
+
+
+  
+// ===== Auto Save (localStorage) =====
+const SAVE_KEY = "golf_score_app_state_v1";
+
+function saveLocal(){
+  try{
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  }catch(e){}
+}
+
+function loadLocal(){
+  try{
+    const s = localStorage.getItem(SAVE_KEY);
+    if(!s) return;
+    const obj = JSON.parse(s);
+    if(obj && typeof obj === "object"){
+      Object.assign(state, obj);
+    }
+  }catch(e){}
+}
+
+const state = {
+    date: "",
+    course: "",
+    viewHalf: "OUT",
+    names: ["増","幸","牛","M"],
+    playOrder: [null,null,null,null],    // 後方互換用（未使用）
+    playOrderOUT: [null,null,null,null], // OUT用打順
+    playOrderIN:  [null,null,null,null], // IN用打順
+    scores: {},           // scores[hole][p] = "5"
+    games: { olympic:{}, vegasOverride:{}, olyCb:{} },// olympic[hole][p] = "-15" etc, vegasOverride[hole][p] = "+5" etc
+    birdie: {},           // birdie[hole][p] = true/false
+    eagle: {},            // eagle[hole][p] = true/false
+    teamHandicap: {},     // teamHandicap[hole] = true  (幸&M -1)
+    inSwitched: false     // OUT→IN切替が一度でも行われたか
+  };
+
+  // OUT: Hole1..18
+  const orderOUT = Array.from({length:18}, (_,i)=>i+1);
+
+  function holeLabel(h){ return String(h); }
+
+  function save(){ 
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  }
+  function load(){
+    let raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) raw = localStorage.getItem(LS_KEY);
+    if(!raw) return false;
+    try{
+      Object.assign(state, JSON.parse(raw));
+      if(!Array.isArray(state.playOrderOUT)) state.playOrderOUT = [null,null,null,null];
+      if(!Array.isArray(state.playOrderIN))  state.playOrderIN  = [null,null,null,null];
+      return true;
+    }catch{ return false; }
+  }
+
+  function resetAll(){
+    localStorage.removeItem(LS_KEY);
+    localStorage.removeItem(SAVE_KEY);
+    location.reload();
+  }
+
+  function clearEnteredData(){
+    modalConfirm("入力データをクリアします。\nよろしいですか？", () => {
+      state.viewHalf = "OUT";
+      state.playOrder = [null,null,null,null];
+      state.playOrderOUT = [null,null,null,null];
+      state.playOrderIN  = [null,null,null,null];
+      state.scores = {};
+      state.games = { olympic:{}, vegasOverride:{}, olyCb:{} };
+      state.birdie = {};
+      state.eagle = {};
+      state.teamHandicap = {};
+      state.inSwitched = false;
+      save();
+      updateMeta();
+      buildTables();
+      recalcAll();
+      applyHalfVisibility(); applyDormie();
+      setActiveHoleForBirdie(null);
+      modalAlert("入力データをクリアしました。\n日付・ゴルフ場・名前は残しています。");
+    });
+  }
+
+
+
+  function applySetupToInputs(){
+    el("date").value = state.date || "";
+    el("course").value = state.course || "";    el("n1").value = state.names[0] || "増";
+    el("n2").value = state.names[1] || "幸";
+    el("n3").value = state.names[2] || "牛";
+    el("n4").value = state.names[3] || "M";
+  }
+
+  function readSetupFromInputs(){
+    state.date = el("date").value || "";
+    state.course = (el("course").value || "").trim();    state.names = [
+      (el("n1").value || "増").trim() || "増",
+      (el("n2").value || "幸").trim() || "幸",
+      (el("n3").value || "牛").trim() || "牛",
+      (el("n4").value || "M").trim()  || "M",
+    ];
+    save();
+  }
+
+  const setupBox = el("setup");
+  const meta = el("meta");
+  const halfLabel = el("halfLabel");
+
+  function setSetupVisible(visible){
+    setupBox.style.display = visible ? "" : "none";
+    if(visible) setupBox.classList.remove("small");
+  }
+
+  function updateMeta(){
+    meta.innerHTML = `<div><strong>${state.date || "日付未入力"}</strong></div><div>${state.course || "ゴルフ場未入力"}</div>`;
+    halfLabel.textContent = state.viewHalf === "OUT" ? "OUT" : "IN";
+    el("toggleHalf").textContent = state.viewHalf === "OUT" ? "INへ切替" : "OUTへ戻る";
+
+    const sn = (id, v) => { const n=el(id); if(n) n.textContent=v; };
+    sn("th1", state.names[0]); sn("th2", state.names[1]);
+    sn("th3", state.names[2]); sn("th4", state.names[3]);
+    sn("go1", state.names[0]); sn("go2", state.names[1]);
+    sn("go3", state.names[2]); sn("go4", state.names[3]);
+    sn("gv1", state.names[0]); sn("gv2", state.names[1]);
+    sn("gv3", state.names[2]); sn("gv4", state.names[3]);
+    // 打順：OUT/INそれぞれ独立して表示
+    const po = state.viewHalf === "IN" ? state.playOrderIN : state.playOrderOUT;
+    el("ord1").value = (po?.[0] == null ? "" : String(po[0]));
+    el("ord2").value = (po?.[1] == null ? "" : String(po[1]));
+    el("ord3").value = (po?.[2] == null ? "" : String(po[2]));
+    el("ord4").value = (po?.[3] == null ? "" : String(po[3]));
+  }
+
+  function ensureHoleObj(obj, hole){
+    if(!obj[hole]) obj[hole] = ["","","",""];
+    return obj[hole];
+  }
+
+  function ensureBoolObj(obj, hole){
+    if(!obj[hole]) obj[hole] = [false,false,false,false];
+    return obj[hole];
+  }
+
+  // テンキー入力（-15など：先頭の - は1つだけ許可）
+  function sanitizeSignedInt(s){
+    s = (s ?? "").toString();
+    // 全角マイナス等を半角に寄せる
+    s = s.replace(/[－—−]/g, "-");
+    // 数字とマイナス以外除去
+    s = s.replace(/[^\d-]/g, "");
+    // マイナスは先頭1つだけ
+    const neg = s.startsWith("-") ? "-" : "";
+    s = s.replace(/-/g, "");
+    return neg + s;
+  }
+  // スコア（打数）は数字だけ（念のため）
+  function sanitizeDigits(s){
+    return (s ?? "").toString().replace(/[^\d]/g,"");
+  }
+
+  const scoreBody = el("scoreBody");
+
+  let activeHoleForBirdie = null;
+
+  function setActiveHoleForBirdie(hole){
+    activeHoleForBirdie = hole;
+    document.querySelectorAll(".birdieWrap").forEach(w => {
+      const h = parseInt(w.getAttribute("data-hole"), 10);
+      w.style.display = (h === activeHoleForBirdie) ? "inline-flex" : "none";
+    });
+  }
+
+  function enableBirdieWrapOnRetap(inp, hole){
+    const showWrap = () => {
+      if((inp.value ?? "") !== ""){
+        setActiveHoleForBirdie(hole);
+      }
+    };
+    inp.addEventListener("click", showWrap);
+    inp.addEventListener("touchend", showWrap, {passive:true});
+  }
+
+  function makeScoreRow(hole){
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-hole", String(hole));
+
+    const th = document.createElement("th");
+    th.className = "sticky holeCol";
+    th.style.whiteSpace = "nowrap";
+
+    // ☑Hc 番号 の順
+    const hc = document.createElement("span");
+    hc.className = "hcWrap";
+    hc.style.display = "inline-flex";
+    hc.style.alignItems = "center";
+    hc.style.gap = "1px";
+    hc.innerHTML = `<input type="checkbox" id="hc_${hole}">`;
+    th.appendChild(hc);
+
+    const holeNum = document.createElement("span");
+    holeNum.textContent = " " + holeLabel(hole);
+    th.appendChild(holeNum);
+
+    const hcInp = hc.querySelector("input");
+    hcInp.checked = !!state.teamHandicap[hole];
+    hcInp.addEventListener("change", () => {
+      state.teamHandicap[hole] = !!hcInp.checked;
+      save();
+      recalcAll();
+    });
+
+    tr.appendChild(th);
+
+    for(let p=0;p<4;p++){
+      const td = document.createElement("td");
+      td.className = "scoreCol";
+
+      const cell = document.createElement("div");
+      cell.className = "scoreCell";
+
+      const inp = document.createElement("input");
+      inp.className = "scoreInput";
+      inp.id = `s_${hole}_${p}`;
+      inp.type = "text";
+      inp.inputMode = "numeric";
+      inp.pattern = "[0-9]*";
+      inp.autocomplete = "off";
+      inp.value = (state.scores[hole] && state.scores[hole][p] !== undefined) ? state.scores[hole][p] : "";
+
+      inp.addEventListener("focus", () => {
+        // 入力移動時はB/Eを出さない。戻って再タップしたときだけ表示する。
+        setActiveHoleForBirdie(null);
+      });
+
+      
+inp.addEventListener("input", () => {
+        const arr = ensureHoleObj(state.scores, hole);
+        const v = sanitizeDigits(inp.value);
+        inp.value = v;
+        arr[p] = v;
+        save();
+        recalcAll();
+        applyHalfVisibility(); applyDormie();
+
+        // ===== 自動フォーカス（次のプレイヤー） =====
+        // 2桁の可能性がある「1」で始まる入力は待機し、2桁入力か他の数字で即移動
+        if(v !== ""){
+          const num = parseInt(v, 10);
+          // 1桁で「1」の場合は待機（10〜19の2桁を考慮）
+          if(v.length === 1 && num === 1){
+            // 待機：次の入力を待つ（自動移動しない）
+            return;
+          }
+          // それ以外（2〜9 の1桁、または 10〜19 の2桁）は即移動
+          const moveToNext = () => {
+            const nextPlayer = p + 1;
+            if(nextPlayer < 4){
+              const next = document.querySelector(`#s_${hole}_${nextPlayer}`);
+              if(next){ next.focus(); next.select(); }
+            }else{
+              // ===== 次ホールへスクロール =====
+              const nextHole = hole + 1;
+              const next = document.querySelector(`#s_${nextHole}_0`);
+              if(next){
+                next.scrollIntoView({behavior:"smooth", block:"center"});
+                setTimeout(()=>{ next.focus(); next.select(); },200);
+              }
+            }
+          };
+          moveToNext();
+        }
+      });
+
+      // 「1」で待機中、フォーカスが外れたら確定として次へ移動しない（blur時に保存済み）
+      inp.addEventListener("keydown", (e) => {
+        const v = sanitizeDigits(inp.value);
+        // Enterキーで「1」入力を確定して次へ移動
+        if(e.key === "Enter" && v !== ""){
+          e.preventDefault();
+          const nextPlayer = p + 1;
+          if(nextPlayer < 4){
+            const next = document.querySelector(`#s_${hole}_${nextPlayer}`);
+            if(next){ next.focus(); next.select(); }
+          }else{
+            const nextHole = hole + 1;
+            const next = document.querySelector(`#s_${nextHole}_0`);
+            if(next){
+              next.scrollIntoView({behavior:"smooth", block:"center"});
+              setTimeout(()=>{ next.focus(); next.select(); },200);
+            }
+          }
+        }
+      });
+
+      enableBirdieWrapOnRetap(inp, hole);
+
+      // バーディーチェック（スコアの横）
+      const bw = document.createElement("label");
+      bw.className = "birdieWrap";
+      bw.setAttribute("data-hole", String(hole));
+      bw.innerHTML = `<span>B</span><input type="checkbox" id="b_${hole}_${p}"><span>E</span><input type="checkbox" id="e_${hole}_${p}">`;
+      const bInp = bw.querySelector(`#b_${hole}_${p}`);
+      const eInp = bw.querySelector(`#e_${hole}_${p}`);
+
+      const bArr = ensureBoolObj(state.birdie, hole);
+      const eArr = ensureBoolObj(state.eagle, hole);
+
+      bInp.checked = !!bArr[p];
+      eInp.checked = !!eArr[p];
+
+      bInp.addEventListener("change", () => {
+        const a = ensureBoolObj(state.birdie, hole);
+        a[p] = !!bInp.checked;
+        save();
+        recalcAll();
+      });
+
+      eInp.addEventListener("change", () => {
+        const a = ensureBoolObj(state.eagle, hole);
+        a[p] = !!eInp.checked;
+        save();
+        recalcAll();
+      });
+
+      cell.appendChild(inp);
+      cell.appendChild(bw);
+      td.appendChild(cell);
+      tr.appendChild(td);
+    }
+
+    return tr;
+  }
+
+  function makeGamesRow(hole){
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-hole", String(hole));
+
+    const th = document.createElement("th");
+    th.className = "sticky holeCol";
+    th.textContent = holeLabel(hole);
+    tr.appendChild(th);
+
+    // Olympic: 手入力（-15などOK）
+    for(let p=0;p<4;p++){
+      const td = document.createElement("td");
+      td.className = "scoreCol olyCol";
+
+      const cell_o = document.createElement("div");
+      cell_o.className = "scoreCell";
+
+      const inp = document.createElement("input");
+      inp.className = "scoreInput olyInput";
+      inp.type = "text";
+      inp.inputMode = "numeric";
+      inp.pattern = "[-0-9]*";
+      inp.autocomplete = "off";
+      inp.value = (state.games.olympic[hole] && state.games.olympic[hole][p] !== undefined) ? state.games.olympic[hole][p] : "";
+
+      inp.addEventListener("input", () => {
+        const arr = ensureHoleObj(state.games.olympic, hole);
+        const v = sanitizeSignedInt(inp.value);
+        inp.value = v;
+        arr[p] = v;
+        save();
+        recalcAll();
+        applyHalfVisibility(); applyDormie();
+      });
+
+      inp.addEventListener("focus", () => {
+        setActiveHoleForBirdie(hole);
+        const o = state.games.vegasOverride?.[hole]?.[p];
+        const hasOverride = (o ?? "").toString().trim() !== "";
+        if(!hasOverride){
+          inp.value = sanitizeSignedInt(inp.value);
+        }
+      });
+      inp.addEventListener("blur", () => {
+        recalcAll();
+      });
+
+      cell_o.appendChild(inp);
+      td.appendChild(cell_o);
+      tr.appendChild(td);
+    }
+
+    // Vegas: 既定は自動表示だが、手入力で上書き可能（空欄に戻すと自動に戻る）
+    for(let p=0;p<4;p++){
+      const td = document.createElement("td");
+      td.className = "scoreCol vegasCol";
+
+      const inp = document.createElement("input");
+      inp.className = "scoreInput vegasInput";
+      inp.type = "text";
+      inp.inputMode = "numeric";
+      inp.pattern = "[-0-9+]*";
+      inp.autocomplete = "off";
+      inp.id = `vegasInp_${hole}_${p}`;
+
+      // 初期値はrecalcAll()で自動/上書きを反映してセットする
+      inp.value = "";
+
+      inp.addEventListener("input", () => {
+        const arr = ensureHoleObj(state.games.vegasOverride, hole);
+        const v = sanitizeSignedInt(inp.value);
+        inp.value = v;
+        arr[p] = v; // ""なら自動に戻る
+        // 行が全部空なら掃除（任意）
+        if(arr.every(x => (x ?? "") === "")) delete state.games.vegasOverride[hole];
+        save();
+        recalcAll();
+        inp.value = v;
+      });
+
+      inp.addEventListener("focus", () => {
+        setActiveHoleForBirdie(hole);
+        const overrideRaw = state.games.vegasOverride?.[hole]?.[p];
+        const hasOverride = (overrideRaw ?? "").toString().trim() !== "";
+        if(hasOverride){
+          inp.value = sanitizeSignedInt(String(overrideRaw));
+        }else{
+          const autoVegas = calcVegasPoints(orderOUT);
+          const autoVal = autoVegas.pointsByHole?.[hole]?.[p];
+          inp.value = (autoVal === "" || autoVal === null || autoVal === undefined) ? "" : (autoVal > 0 ? `+${autoVal}` : `${autoVal}`);
+        }
+        setTimeout(() => { try{ inp.select(); }catch(e){} }, 0);
+      });
+
+      inp.addEventListener("blur", () => {
+        const arr = ensureHoleObj(state.games.vegasOverride, hole);
+        const v = sanitizeSignedInt(inp.value);
+        arr[p] = v;
+        if(arr.every(x => (x ?? "") === "")) delete state.games.vegasOverride[hole];
+        save();
+        recalcAll();
+      });
+
+      const cell_v = document.createElement("div");
+      cell_v.className = "scoreCell";
+      cell_v.appendChild(inp);
+      td.appendChild(cell_v);
+      tr.appendChild(td);
+    }
+
+    return tr;
+  }
+
+  function makeOlyRow(hole){
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-hole", String(hole));
+    const th = document.createElement("th");
+    th.className = "sticky holeCol";
+    th.style.whiteSpace = "nowrap";
+
+    // ☑ + hole番号
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.id = `olyCb_${hole}`;
+    cb.style.cssText = "width:12px;height:12px;vertical-align:middle;margin-right:2px;";
+    cb.checked = !!(state.games.olyCb && state.games.olyCb[hole]);
+    cb.addEventListener("change", () => {
+      if(!state.games.olyCb) state.games.olyCb = {};
+      state.games.olyCb[hole] = cb.checked;
+      save();
+      applyOlyHighlight();
+    });
+
+    const numSpan = document.createElement("span");
+    numSpan.textContent = holeLabel(hole);
+    numSpan.style.verticalAlign = "middle";
+
+    th.appendChild(cb);
+    th.appendChild(numSpan);
+
+    tr.appendChild(th);
+
+    for(let p=0;p<4;p++){
+      const td = document.createElement("td");
+      td.className = "scoreCol olyCol";
+      const inp = document.createElement("input");
+      inp.className = "scoreInput olyInput";
+      inp.type = "text"; inp.inputMode = "numeric"; inp.pattern = "[-0-9]*";
+      inp.autocomplete = "off";
+      inp.value = (state.games.olympic[hole]?.[p] ?? "");
+      inp.addEventListener("input", () => {
+        const arr = ensureHoleObj(state.games.olympic, hole);
+        const v = sanitizeSignedInt(inp.value); inp.value = v; arr[p] = v;
+        save(); recalcAll(); applyHalfVisibility(); applyDormie();
+      });
+      inp.addEventListener("blur", () => recalcAll());
+      td.appendChild(inp);
+      tr.appendChild(td);
+    }
+    return tr;
+  }
+
+  function applyOlyHighlight(){
+    const mode = state.viewHalf || "OUT";
+    const holes = mode === "IN"
+      ? [10,11,12,13,14,15,16,17,18]
+      : [1,2,3,4,5,6,7,8,9];
+
+    // 全行リセット
+    holes.forEach(h => {
+      const tr = document.querySelector(`#olyBody tr[data-hole="${h}"]`);
+      if(!tr) return;
+      tr.querySelectorAll("td").forEach(td => td.style.background = "");
+      const th = tr.querySelector("th");
+      if(th){ th.style.background = ""; th.style.color = ""; }
+    });
+
+    // チェック済みが1つ以上あれば、最初の未チェックホールを赤くする
+    const hasSomeChecked = holes.some(h => state.games.olyCb?.[h]);
+    if(!hasSomeChecked) return;
+
+    const nextHole = holes.find(h => !state.games.olyCb?.[h]);
+    if(!nextHole) return;
+
+    const tr = document.querySelector(`#olyBody tr[data-hole="${nextHole}"]`);
+    if(!tr) return;
+    tr.querySelectorAll("td").forEach(td => td.style.background = "#f4b1b1");
+    const th = tr.querySelector("th");
+    if(th){ th.style.background = "#d40000"; th.style.color = "#fff"; }
+  }
+
+  function makeVegasRow(hole){
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-hole", String(hole));
+    const th = document.createElement("th");
+    th.className = "sticky holeCol";
+    th.textContent = holeLabel(hole);
+    tr.appendChild(th);
+    for(let p=0;p<4;p++){
+      const td = document.createElement("td");
+      td.className = "scoreCol vegasCol";
+      const cell = document.createElement("div");
+      cell.className = "scoreCell";
+      const inp = document.createElement("input");
+      inp.className = "scoreInput vegasInput";
+      inp.type = "text"; inp.inputMode = "numeric"; inp.pattern = "[-0-9]*";
+      inp.autocomplete = "off"; inp.readOnly = true;
+      inp.id = `vegasInp_${hole}_${p}`;
+      inp.addEventListener("focus", () => {
+        const ov = state.games.vegasOverride?.[hole]?.[p];
+        if((ov ?? "") !== "") { inp.readOnly = false; }
+      });
+      inp.addEventListener("input", () => {
+        inp.readOnly = false;
+        const arr = ensureHoleObj(state.games.vegasOverride, hole);
+        const v = sanitizeSignedInt(inp.value);
+        if(v === ""){ arr[p] = ""; inp.value = ""; }
+        else { inp.value = v; arr[p] = v; }
+        save(); recalcAll(); applyHalfVisibility(); applyDormie();
+      });
+      inp.addEventListener("blur", () => { inp.readOnly = true; recalcAll(); });
+      cell.appendChild(inp);
+      td.appendChild(cell);
+      tr.appendChild(td);
+    }
+    return tr;
+  }
+
+  function buildTables(){
+    scoreBody.innerHTML = "";
+    const olyBody   = el("olyBody");
+    const vegasBody = el("vegasBody");
+    if(olyBody)   olyBody.innerHTML = "";
+    if(vegasBody) vegasBody.innerHTML = "";
+    const order = orderOUT;
+    for(const h of order){
+      scoreBody.appendChild(makeScoreRow(h));
+      if(olyBody)   olyBody.appendChild(makeOlyRow(h));
+      if(vegasBody) vegasBody.appendChild(makeVegasRow(h));
+    }
+    setActiveHoleForBirdie(null);
+    applyHalfVisibility();
+    applyOlyHighlight();
+  }
+
+  function rebindGamesInputs(){}
+
+  // ===== 計算 =====
+  const symWin = "〇";
+  const symLose = "×";
+  const symTie = "—";
+
+  function n(v){
+    if(v === "" || v === null || v === undefined) return null;
+    const x = parseInt(v,10);
+    return Number.isFinite(x) ? x : null;
+  }
+  function getScore(hole, p){
+    const row = state.scores[hole];
+    if(!row) return null;
+    return n(row[p]);
+  }
+  function setCellText(id, text){
+    const node = el(id);
+    if(node) node.textContent = (text === 0 ? "0" : (text || ""));
+  }
+  function setResultCell(id, text){
+    const node = el(id);
+    if(!node) return;
+    node.textContent = (text === 0 ? "0" : (text || ""));
+    node.classList.remove("resWin","resLose","resTie");
+    if(text === symWin) node.classList.add("resWin");
+    else if(text === symLose) node.classList.add("resLose");
+    else if(text === symTie) node.classList.add("resTie");
+  }
+
+  // マッチ：増 vs 幸
+  function matchSymbol(hole){
+    const a = getScore(hole,0);
+    const b = getScore(hole,1);
+    if(a===null || b===null) return "";
+    if(a<b) return symWin;
+    if(a>b) return symLose;
+    return symTie;
+  }
+
+  // チーム戦：増+牛 vs 幸+M（ハンデ☑で幸+Mから-1）
+  function teamSymbolsByOrder(order){
+    const out = {};
+    let pending = [];
+    for(const hole of order){
+      const a1 = getScore(hole,0), a2 = getScore(hole,2);
+      const b1 = getScore(hole,1), b2 = getScore(hole,3);
+      if([a1,a2,b1,b2].some(x => x===null)){
+        out[hole] = "";
+        continue;
+      }
+      const A = a1 + a2;
+      let B = b1 + b2;
+      if(state.teamHandicap && state.teamHandicap[hole]) B = B - 1;
+
+      if(A === B){
+        out[hole] = symTie;
+        pending.push(hole);
+      }else{
+        const res = (A < B) ? symWin : symLose;
+        out[hole] = res;
+        if(pending.length){
+          for(const ph of pending) out[ph] = res;
+          pending = [];
+        }
+      }
+    }
+    return out;
+  }
+
+  function sumPlayerTotal(){
+    const totals = [0,0,0,0];
+    let any = false;
+    for(let h=1; h<=18; h++){
+      for(let p=0;p<4;p++){
+        const v = getScore(h,p);
+        if(v!==null){
+          totals[p] += v;
+          any = true;
+        }
+      }
+    }
+    return any ? totals : [0,0,0,0];
+  }
+
+  function sumRangeForPlayer(p, fromHole, toHole){
+    let s = 0;
+    let any = false;
+    for(let h=fromHole; h<=toHole; h++){
+      const v = getScore(h,p);
+      if(v!==null){ s += v; any = true; }
+    }
+    return any ? s : "";
+  }
+
+  function sumOutInForPlayer(p){
+    const out = sumRangeForPlayer(p,1,9) || 0;
+    const inn = sumRangeForPlayer(p,10,18) || 0;
+    return {out, inn, total: out+inn};
+  }
+
+  function matchTeamSumsByRange(order, range){
+    // range: {from,to} holes by number, regardless of display order
+    let mW=0, mL=0, tW=0, tL=0;
+    const teamMap = teamSymbolsByOrder(order);
+    for(const hole of order){
+      if(hole < range.from || hole > range.to) continue;
+      const m = matchSymbol(hole);
+      if(m===symWin) mW++;
+      if(m===symLose) mL++;
+      const t = teamMap[hole] || "";
+      if(t===symWin) tW++;
+      if(t===symLose) tL++;
+    }
+    return { match:(mW-mL), team:(tW-tL), teamMap };
+  }
+
+  // ===== ドーミー判定（次の未入力Holeを赤） =====
+  // ===== ドーミー判定（統一版） =====
+  // OUTスタート(viewHalf=OUT): OUT(1-9)で前半リード計算 → IN(10-18)の後半ホールに色付け
+  // INスタート (viewHalf=IN) : IN(10-18)で前半リード計算 → OUT(1-9)の後半ホールに色付け
+  function calcDormieResult(order){
+    const vh = state.viewHalf || "OUT";
+    let scoreHoles, backHoles;
+    if(vh === "IN"){
+      scoreHoles = order.filter(h => h >= 10 && h <= 18);
+      backHoles  = order.filter(h => h >= 1  && h <= 9);
+    } else {
+      scoreHoles = order.filter(h => h >= 1  && h <= 9);
+      backHoles  = order.filter(h => h >= 10 && h <= 18);
+    }
+
+    // 前半9Hのスコアからリードを計算（増 vs 幸）
+    let lead = 0;
+    for(let i=0; i<scoreHoles.length; i++){
+      const hole = scoreHoles[i];
+      const a = getScore(hole,0);
+      const b = getScore(hole,1);
+      if(a===null || b===null) break;
+      if(a<b) lead += 1;
+      else if(a>b) lead -= 1;
+    }
+
+    // 後半9Hを順に見て入力済みのリードを更新し、最初の未入力ホールを判定
+    for(let i=0; i<backHoles.length; i++){
+      const hole = backHoles[i];
+      const a = getScore(hole,0);
+      const b = getScore(hole,1);
+      if(a===null || b===null){
+        // 未入力ホール：ドーミー or アップドーミー判定
+        const remain = backHoles.length - i; // このホール含む残り
+        if(lead !== 0){
+          if(Math.abs(lead) === remain){
+            return { hole, type:"dormie" };      // ドーミー（赤）
+          } else if(Math.abs(lead) === remain - 1){
+            return { hole, type:"up-dormie" };   // アップドーミー（青）
+          }
+        }
+        break;
+      }
+      // 入力済みならリード更新
+      if(a<b) lead += 1;
+      else if(a>b) lead -= 1;
+    }
+    return null;
+  }
+
+  // グローバルのapplyDormieから呼ばれる統一関数
+  function applyDormieInner(){
+    clearDormieMarks();
+    const result = calcDormieResultFull(orderOUT);
+    markDormieRow(result);
+  }
+  window.applyDormieInner = applyDormieInner; // グローバルに公開
+
+  // ドーミー判定
+  // OUTスタート(viewHalf=OUT) : OUTの入力中にリアルタイム判定（9H残り基準）
+  // INスタート(viewHalf=IN)   : INの入力中にリアルタイム判定（9H残り基準）
+  // INスタートでOUTへ切替後   : INの全9Hリードを引き継ぎ、OUTの入力分を加算しながら
+  //                             OUTの残りホールでドーミー判定（18H全体として判定）
+  function calcDormieResultFull(order){
+    const vh = state.viewHalf || "OUT";
+    const inHoles  = order.filter(h => h >= 10 && h <= 18);
+    const outHoles = order.filter(h => h >= 1  && h <= 9);
+
+    // INの全9Hが入力済みかチェック（INスタートの判定に使用）
+    const inAllFilled = inHoles.every(h => getScore(h,0)!==null && getScore(h,1)!==null);
+
+    if(vh === "IN"){
+      // IN表示中のドーミー判定
+      // INスタート（OUTが未入力）：残り = IN残り + OUT9H全部
+      // OUTスタートでINを後半にやっている場合：IN内だけで判定
+      const outAnyFilled = outHoles.some(h => getScore(h,0)!==null && getScore(h,1)!==null);
+      const outRemaining = outHoles.filter(h => getScore(h,0)===null || getScore(h,1)===null).length;
+
+      let lead = 0;
+      for(let i=0; i<inHoles.length; i++){
+        const hole = inHoles[i];
+        const a = getScore(hole,0), b = getScore(hole,1);
+        if(a===null || b===null){
+          const inRemain = inHoles.length - i;
+          // INスタート（OUTが未入力）なら残りにOUT分を加算
+          const remain = (!outAnyFilled) ? inRemain + outRemaining : inRemain;
+          if(lead !== 0){
+            if(Math.abs(lead) === remain)     return { hole, type:"dormie" };
+            if(Math.abs(lead) === remain - 1) return { hole, type:"up-dormie" };
+          }
+          break;
+        }
+        if(a<b) lead += 1; else if(a>b) lead -= 1;
+      }
+      return null;
+    }
+
+    // OUT表示中
+    if(inAllFilled){
+      // INスタート：INの全9Hリードを計算してOUTに引き継ぐ
+      let lead = 0;
+      for(const h of inHoles){
+        const a = getScore(h,0), b = getScore(h,1);
+        if(a<b) lead += 1; else if(a>b) lead -= 1;
+      }
+      // OUTの入力分を加算しながら最初の未入力ホールでドーミー判定
+      // 残りホール数はOUT内の残り（9H基準）
+      for(let i=0; i<outHoles.length; i++){
+        const hole = outHoles[i];
+        const a = getScore(hole,0), b = getScore(hole,1);
+        if(a===null || b===null){
+          const remain = outHoles.length - i;
+          if(lead !== 0){
+            if(Math.abs(lead) === remain)     return { hole, type:"dormie" };
+            if(Math.abs(lead) === remain - 1) return { hole, type:"up-dormie" };
+          }
+          break;
+        }
+        if(a<b) lead += 1; else if(a>b) lead -= 1;
+      }
+      return null;
+    }
+
+    // OUTスタート：OUTの入力中はIN9Hも残りに含めて全18H基準で判定
+    let lead = 0;
+    for(let i=0; i<outHoles.length; i++){
+      const hole = outHoles[i];
+      const a = getScore(hole,0), b = getScore(hole,1);
+      if(a===null || b===null){
+        // OUT残り + IN9H全部が残り
+        const remain = (outHoles.length - i) + inHoles.length;
+        if(lead !== 0){
+          if(Math.abs(lead) === remain)     return { hole, type:"dormie" };
+          if(Math.abs(lead) === remain - 1) return { hole, type:"up-dormie" };
+        }
+        break;
+      }
+      if(a<b) lead += 1; else if(a>b) lead -= 1;
+    }
+    return null;
+  }
+
+  function clearDormieMarks(){
+    document.querySelectorAll("#scoreBody tr").forEach(tr => {
+      tr.classList.remove("dormie");
+      tr.classList.remove("up-dormie");
+    });
+  }
+  function markDormieRow(result){
+    if(!result) return;
+    const { hole, type } = result;
+    const tr = document.querySelector(`#scoreBody tr[data-hole="${hole}"]`);
+    if(tr) tr.classList.add(type);
+  }
+
+  // ===== ラスベガス自動計算 =====
+  function swapDigits(num){
+    const tens = Math.floor(num/10);
+    const ones = num % 10;
+    return ones*10 + tens;
+  }
+
+  function roundVegasDiff(d){
+    if(d<=0) return 0;
+    if(d<=5) return 5;
+    return Math.ceil(d/5)*5;
+  }
+
+  function sanitizeOrderNum(v){
+    v = (v ?? "").toString().replace(/[^\d]/g,"");
+    const n = parseInt(v,10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function getInitialOrderPlayers(forIN){
+    // forIN=true のときIN用、falseのときOUT用の打順を参照
+    const po = forIN ? state.playOrderIN : state.playOrderOUT;
+    const nums = (Array.isArray(po) && po.length === 4)
+      ? po.map(sanitizeOrderNum)
+      : [null,null,null,null];
+
+    const ok = nums.every(v => v != null) && (new Set(nums)).size === 4 && nums.every(v => v>=1 && v<=4);
+    if(!ok) return null;
+
+    const players = [0,1,2,3].map(p => ({p, n: nums[p]}));
+    players.sort((a,b)=>a.n-b.n);
+    return players.map(x=>x.p);
+  }
+
+  function isPlayOrderAnyFilled(){
+    const po = state.viewHalf === "IN" ? state.playOrderIN : state.playOrderOUT;
+    return Array.isArray(po) && po.some(v => v !== null && v !== "" && v !== undefined);
+  }
+
+  function calcVegasPoints(order){
+    // returns pointsByHole[hole][p] = signed points, totals per player,
+    // and orderNumsByHole[hole][p] = そのホールで使った打順番号(1〜4)
+    const pointsByHole = {};
+    const totals = [0,0,0,0];
+    const orderNumsByHole = {}; const multByHole = {};
+
+    // 最初のホールがIN(10-18)かどうかで初期打順を決める
+    const firstHole = order[0] || 1;
+    const forIN = firstHole >= 10;
+    let prevOrderPlayers = getInitialOrderPlayers(forIN) || [0,1,2,3];
+    let pushStreak = 0;
+
+    for(let idx=0; idx<order.length; idx++){
+      const hole = order[idx];
+
+      // 打順決定（前ホールの良い順、同点は前の順のまま）
+      if(idx>0){
+        const prevHole = order[idx-1];
+        const prevScores = prevOrderPlayers.map(p => ({p, s: getScore(prevHole,p)}));
+        // 未入力があれば打順は維持
+        if(prevScores.every(x => x.s!==null)){
+          prevScores.sort((a,b)=>{
+            if(a.s !== b.s) return a.s - b.s;
+            return prevOrderPlayers.indexOf(a.p) - prevOrderPlayers.indexOf(b.p);
+          });
+          prevOrderPlayers = prevScores.map(x=>x.p);
+        }
+      }
+
+      orderNumsByHole[hole] = ["", "", "", ""];
+      for(let ord=0; ord<prevOrderPlayers.length; ord++){
+        const playerIdx = prevOrderPlayers[ord];
+        orderNumsByHole[hole][playerIdx] = ord + 1;
+      }
+
+      const aIdx = [prevOrderPlayers[0], prevOrderPlayers[3]];
+      const bIdx = [prevOrderPlayers[1], prevOrderPlayers[2]];
+
+      const aS = aIdx.map(p=>getScore(hole,p));
+      const bS = bIdx.map(p=>getScore(hole,p));
+
+      pointsByHole[hole] = [ "", "", "", "" ];
+
+      if([...aS, ...bS].some(x=>x===null)){
+        // 未入力 → 表示空
+        continue;
+      }
+
+      // 数字（各人10打以上は9扱い。小さい方が10の位）
+      const cap9 = (n)=> Math.min(n, 9);
+      const aC = aS.map(cap9);
+      const bC = bS.map(cap9);
+      let numA = Math.min(aC[0],aC[1])*10 + Math.max(aC[0],aC[1]);
+      let numB = Math.min(bC[0],bC[1])*10 + Math.max(bC[0],bC[1]);
+
+      // 特例：9扱いで同点になる場合、いずれかのチームに2桁スコアがいれば
+      // その2桁スコアの小さい方のチームを勝ちとする（プッシュにしない）
+      if(numA === numB){
+        const a2digit = aS.find(s => s >= 10);  // Aチームの2桁スコア（なければundefined）
+        const b2digit = bS.find(s => s >= 10);  // Bチームの2桁スコア
+        if(a2digit !== undefined || b2digit !== undefined){
+          const aMin2 = a2digit !== undefined ? a2digit : 0;
+          const bMin2 = b2digit !== undefined ? b2digit : 0;
+          if(aMin2 < bMin2)       numA = numB - 1; // Aが勝ち
+          else if(bMin2 < aMin2)  numB = numA - 1; // Bが勝ち
+          // 2桁スコアが同じなら真のプッシュ（何もしない）
+        }
+      }
+
+      const bArr = ensureBoolObj(state.birdie, hole);
+      const eArr = ensureBoolObj(state.eagle, hole);
+      const isBonus = (p)=> !!bArr[p] || !!eArr[p];
+
+      const aBirdies = aIdx.map(p=>isBonus(p));
+      const bBirdies = bIdx.map(p=>isBonus(p));
+
+      const aAny = aBirdies.some(Boolean);
+      const bAny = bBirdies.some(Boolean);
+
+      // バーディー：片側のみ→相手数字を逆転 / 両チーム→双方「自分の数字」を逆転
+      if(aAny && bAny){
+        numA = swapDigits(numA);
+        numB = swapDigits(numB);
+      }else{
+        if(aAny) numB = swapDigits(numB);
+        if(bAny) numA = swapDigits(numA);
+      }
+
+      // 勝敗
+      if(numA === numB){
+        pushStreak += 1;
+        // プッシュは0点（次ホール倍率）
+        continue;
+      }
+
+      const winner = (numA < numB) ? "A" : "B";
+      const base = roundVegasDiff(Math.abs(numA - numB));
+      const mult = (pushStreak + 1); multByHole[hole] = mult;
+
+      // 同チーム2人バーディー（またはイーグル扱い） → 勝った点を2倍
+      const aDouble = aBirdies.filter(Boolean).length >= 2;
+      const bDouble = bBirdies.filter(Boolean).length >= 2;
+      let winBonus = 1;
+      if(winner==="A" && aDouble) winBonus = 2;
+      if(winner==="B" && bDouble) winBonus = 2;
+
+      const pts = base * mult * winBonus;
+
+      pushStreak = 0;
+
+      // 付与：勝ちチーム +pts / 負けチーム -pts
+      if(winner==="A"){
+        for(const p of aIdx){ pointsByHole[hole][p] = +pts; totals[p]+=pts; }
+        for(const p of bIdx){ pointsByHole[hole][p] = -pts; totals[p]-=pts; }
+      }else{
+        for(const p of bIdx){ pointsByHole[hole][p] = +pts; totals[p]+=pts; }
+        for(const p of aIdx){ pointsByHole[hole][p] = -pts; totals[p]-=pts; }
+      }
+    }
+
+    // 手入力上書き（空欄以外はその値を採用）
+    for(let h=1; h<=18; h++){
+      const o = state.games.vegasOverride?.[h];
+      if(!o) continue;
+      for(let p=0;p<4;p++){
+        const raw = o[p];
+        if(raw===undefined || raw===null) continue;
+        const s = (raw ?? "").toString().trim();
+        if(s==="") continue; // 空欄は自動
+        const x = parseInt(s,10);
+        pointsByHole[h] = pointsByHole[h] || ["","","",""];
+        pointsByHole[h][p] = Number.isFinite(x) ? x : "";
+      }
+    }
+
+    // totals を再計算（上書きを反映）
+    const totals2 = [0,0,0,0];
+    for(const hStr in pointsByHole){
+      const row = pointsByHole[hStr];
+      if(!row) continue;
+      for(let p=0;p<4;p++){
+        const v = row[p];
+        if(v!=="" && v!==null && v!==undefined){
+          const x = parseInt(v,10);
+          if(Number.isFinite(x)) totals2[p] += x;
+        }
+      }
+    }
+
+    return { pointsByHole, totals: totals2, orderNumsByHole, multByHole };
+  }
+
+  function sumOlympicRange(p, fromHole, toHole){
+    let s = 0;
+    let any = false;
+    for(let h=fromHole; h<=toHole; h++){
+      const row = state.games.olympic[h];
+      if(!row) continue;
+      const v = row[p];
+      if(v === "" || v === null || v === undefined) continue;
+      const x = parseInt(v,10);
+      if(Number.isFinite(x)){ s += x; any = true; }
+    }
+    return any ? s : "";
+  }
+
+  function recalcAll(){
+    const inStarted = [10,11,12,13,14,15,16,17,18].some(h => {
+      const r = state.scores[h];
+      return r && r.some(v => (v ?? "") !== "");
+    });
+    const vegasOrder = inStarted
+      ? [10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]
+      : orderOUT;
+    const order = orderOUT;
+
+    // マッチ・チーム戦の各Hole
+    for(const h of order){
+      setResultCell(`match_${h}`, matchSymbol(h));
+    }
+    const teamMap = teamSymbolsByOrder(order);
+    for(const h of order){
+      setResultCell(`team_${h}`, teamMap[h] || "");
+    }
+
+    // totals row
+    const totals = sumPlayerTotal();
+    el("tSum1").textContent = totals[0] ? totals[0] : "";
+    el("tSum2").textContent = totals[1] ? totals[1] : "";
+    el("tSum3").textContent = totals[2] ? totals[2] : "";
+    el("tSum4").textContent = totals[3] ? totals[3] : "";
+
+    // half
+    el("tOut1").textContent = sumRangeForPlayer(0,1,9);
+    el("tOut2").textContent = sumRangeForPlayer(1,1,9);
+    el("tOut3").textContent = sumRangeForPlayer(2,1,9);
+    el("tOut4").textContent = sumRangeForPlayer(3,1,9);
+    el("tIn1").textContent = sumRangeForPlayer(0,10,18);
+    el("tIn2").textContent = sumRangeForPlayer(1,10,18);
+    el("tIn3").textContent = sumRangeForPlayer(2,10,18);
+    el("tIn4").textContent = sumRangeForPlayer(3,10,18);
+
+    // match/team合計はマッチ/チームタブ用に計算だけ保持
+    const full = matchTeamSumsByRange(order, {from:1,to:18});
+    const outS = matchTeamSumsByRange(order, {from:1,to:9});
+    const inS  = matchTeamSumsByRange(order, {from:10,to:18});
+
+    // ドーミー表示
+    clearDormieMarks();
+    const dormieResult = calcDormieResultFull(order);
+    markDormieRow(dormieResult);
+
+    // Olympic 合計 & half
+    el("oSum1").textContent = sumOlympicRange(0,1,18);
+    el("oSum2").textContent = sumOlympicRange(1,1,18);
+    el("oSum3").textContent = sumOlympicRange(2,1,18);
+    el("oSum4").textContent = sumOlympicRange(3,1,18);
+
+    el("oOut1").textContent = sumOlympicRange(0,1,9);
+    el("oOut2").textContent = sumOlympicRange(1,1,9);
+    el("oOut3").textContent = sumOlympicRange(2,1,9);
+    el("oOut4").textContent = sumOlympicRange(3,1,9);
+
+    el("oIn1").textContent = sumOlympicRange(0,10,18);
+    el("oIn2").textContent = sumOlympicRange(1,10,18);
+    el("oIn3").textContent = sumOlympicRange(2,10,18);
+    el("oIn4").textContent = sumOlympicRange(3,10,18);
+
+    // Vegas（自動計算 + 手入力上書き）
+    const vegas = calcVegasPoints(vegasOrder);
+    
+const fmtV = (v, ord, mult)=> {
+  if(v === "" || v === null || v === undefined) return "";
+  const base = (v>0 ? `+${v}` : `${v}`);
+  const m = (mult && mult>1) ? `×${mult}` : "";
+  return ord ? `${base}(${ord})${m}` : `${base}${m}`;
+};
+
+
+    for(const h of order){
+      for(let p=0;p<4;p++){
+        const inp = el(`vegasInp_${h}_${p}`);
+        if(!inp) continue;
+
+        // 上書きが入っていればそれを表示、空なら自動値を表示
+        const o = state.games.vegasOverride?.[h]?.[p];
+        const hasOverride = (o ?? "").toString().trim() !== "";
+        const v = hasOverride ? parseInt(o,10) : vegas.pointsByHole[h]?.[p];
+        const ord = vegas.orderNumsByHole?.[h]?.[p];
+
+        inp.value = hasOverride ? (Number.isFinite(v) ? `${v}${ord?`(${ord})`:""}` : "") : fmtV(v, ord, vegas.multByHole?.[h]);
+      }
+    }
+    el("vSum1").textContent = vegas.totals[0] ? vegas.totals[0] : (vegas.totals[0]===0 ? "0":"");
+    el("vSum2").textContent = vegas.totals[1] ? vegas.totals[1] : (vegas.totals[1]===0 ? "0":"");
+    el("vSum3").textContent = vegas.totals[2] ? vegas.totals[2] : (vegas.totals[2]===0 ? "0":"");
+    el("vSum4").textContent = vegas.totals[3] ? vegas.totals[3] : (vegas.totals[3]===0 ? "0":"");
+
+    // Vegas half totals（加算）
+    const vHalf = [0,0,0,0], vHalfAny = [false,false,false,false];
+    const vHalf2= [0,0,0,0], vHalf2Any= [false,false,false,false];
+    for(let h=1;h<=9;h++){
+      const row = vegas.pointsByHole[h];
+      if(!row) continue;
+      for(let p=0;p<4;p++){
+        if(row[p]!=="" && row[p]!==null && row[p]!==undefined){
+          vHalf[p] += row[p];
+          vHalfAny[p] = true;
+        }
+      }
+    }
+    for(let h=10;h<=18;h++){
+      const row = vegas.pointsByHole[h];
+      if(!row) continue;
+      for(let p=0;p<4;p++){
+        if(row[p]!=="" && row[p]!==null && row[p]!==undefined){
+          vHalf2[p] += row[p];
+          vHalf2Any[p] = true;
+        }
+      }
+    }
+    const setHalf = (id, val, any) => { el(id).textContent = any ? (val===0 ? "0" : val) : ""; };
+    setHalf("vOut1", vHalf[0], vHalfAny[0]);
+    setHalf("vOut2", vHalf[1], vHalfAny[1]);
+    setHalf("vOut3", vHalf[2], vHalfAny[2]);
+    setHalf("vOut4", vHalf[3], vHalfAny[3]);
+    setHalf("vIn1", vHalf2[0], vHalf2Any[0]);
+    setHalf("vIn2", vHalf2[1], vHalf2Any[1]);
+    setHalf("vIn3", vHalf2[2], vHalf2Any[2]);
+    setHalf("vIn4", vHalf2[3], vHalf2Any[3]);
+
+    // ===== マッチ勝者トロフィー =====
+    {
+      const th1 = el("th1"), th2 = el("th2");
+      const tr1 = el("trophy1"), tr2 = el("trophy2");
+      if(th1) th1.textContent = state.names[0];
+      if(th2) th2.textContent = state.names[1];
+      if(tr1) tr1.textContent = "";
+      if(tr2) tr2.textContent = "";
+      let matchLead = 0, remaining = 0;
+      [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].forEach(h => {
+        const a = getScore(h,0), b = getScore(h,1);
+        if(a !== null && b !== null){
+          if(a < b) matchLead++; else if(a > b) matchLead--;
+        } else { remaining++; }
+      });
+      if(matchLead !== 0 && Math.abs(matchLead) > remaining){
+        if(matchLead > 0){ if(tr1) tr1.textContent = "🏆"; }
+        else              { if(tr2) tr2.textContent = "🏆"; }
+      }
+    }
+  }
+
+  // ===== Hole1入力で10-18を隠す / Hole10入力で1-9を隠す（両方入力されたら全部表示） =====
+  function holeHasAnyScore(hole){
+    const r = state.scores[hole];
+    if(r && r.some(v => (v ?? "") !== "")) return true;
+    return false;
+  }
+  function holeHasAnyOlympic(hole){
+    const r = state.games.olympic[hole];
+    if(r && r.some(v => (v ?? "") !== "")) return true;
+    return false;
+  }
+  function applyHalfVisibility(){
+    const mode = state.viewHalf; // "OUT" or "IN"
+    const setRow = (rootSelector) => {
+      document.querySelectorAll(`${rootSelector} tr[data-hole]`).forEach(tr => {
+        const h = parseInt(tr.getAttribute("data-hole"),10);
+        let show = true;
+        if(mode==="OUT") show = (h>=1 && h<=9);
+        if(mode==="IN")  show = (h>=10 && h<=18);
+        tr.style.display = show ? "" : "none";
+      });
+    };
+    setRow("#scoreBody");
+    setRow("#olyBody");
+    setRow("#vegasBody");
+    setRow("#matchBody");
+  }
+// ===== PDF =====
+  function buildPdfDom(){
+    const order = orderOUT;
+    const stage = el("pdfStage");
+    stage.innerHTML = "";
+
+    const outStarted = [1,2,3,4,5,6,7,8,9].some(h => {
+      const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
+    });
+    const inStarted = [10,11,12,13,14,15,16,17,18].some(h => {
+      const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
+    });
+    const allOrder = (!outStarted && inStarted)
+      ? [10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]
+      : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
+    const vegasOrder = (!outStarted && inStarted)
+      ? [10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]
+      : orderOUT;
+
+    const totals = sumPlayerTotal();
+    const full   = matchTeamSumsByRange(order, {from:1,to:18});
+    const mOut   = matchTeamSumsByRange(order, {from:1,to:9});
+    const mIn    = matchTeamSumsByRange(order, {from:10,to:18});
+    const vegas  = calcVegasPoints(vegasOrder);
+    const teamMap= teamSymbolsByOrder(order);
+    const fmt    = (v)=> (v===""||v===null||v===undefined) ? "" : (v>0?`+${v}`:`${v}`);
+    const N      = state.names;
+
+    // スマホ最適化：大きめフォント・余裕のある行高
+    const PW  = 340;
+    const FS  = "font-size:11px;";
+    const RH  = "height:22px;line-height:22px;";
+    const HFS = "font-size:11px;";
+    const TD  = `border:1px solid #444;padding:0 1px;text-align:center;${FS}${RH}`;
+    const TH  = `border:1px solid #444;padding:0 1px;background:#e8e8e8;font-weight:800;text-align:center;${FS}${RH}`;
+    const SUB = `border:1px solid #444;padding:0 1px;background:#ccc;font-weight:800;text-align:center;${FS}${RH}`;
+    const TOT = `border:1px solid #444;padding:0 1px;background:#111;color:#fff;font-weight:900;text-align:center;${FS}${RH}`;
+    const HDR = `font-size:13px;font-weight:900;margin:0 0 4px;border-bottom:2px solid #000;padding-bottom:2px;`;
+    const FONT= `font-family:system-ui,-apple-system,'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;`;
+    const PAGE= `${FONT}background:#fff;color:#000;padding:4px;width:360px;box-sizing:border-box;page-break-after:always;`;
+    const LAST= `${FONT}background:#fff;color:#000;padding:4px;width:360px;box-sizing:border-box;`;
+    // 勝者
+    let matchLead=0, remaining=0;
+    [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].forEach(h=>{
+      const a=getScore(h,0),b=getScore(h,1);
+      if(a!==null&&b!==null){if(a<b)matchLead++;else if(a>b)matchLead--;}else remaining++;
+    });
+    const trophy1 = (matchLead>0&&Math.abs(matchLead)>remaining)?"🏆":"";
+    const trophy2 = (matchLead<0&&Math.abs(matchLead)>remaining)?"🏆":"";
+
+    function vegasHalfSum(from,to){
+      const s=[0,0,0,0],a=[false,false,false,false];
+      for(let h=from;h<=to;h++){const row=vegas.pointsByHole[h];if(!row)continue;for(let p=0;p<4;p++){if(row[p]!==""&&row[p]!==null&&row[p]!==undefined){s[p]+=row[p];a[p]=true;}}}
+      return s.map((v,i)=>a[i]?(v===0?"0":String(v)):"");
+    }
+
+    // 列幅
+    const hW = 28;
+    const s4W = Math.floor((PW - hW) / 4);
+    const m2W = 36;
+    const m4W = Math.floor((PW - hW - m2W*2) / 4);
+
+    const col4 = `<colgroup><col style="width:${hW}px">${[0,1,2,3].map(()=>`<col style="width:${s4W}px">`).join("")}</colgroup>`;
+    const colM = `<colgroup><col style="width:${hW}px"><col style="width:${m2W}px"><col style="width:${m2W}px">${[0,1,2,3].map(()=>`<col style="width:${m4W}px">`).join("")}</colgroup>`;
+
+    const head4= (n1,n2)=>`<tr><th style="${TH}">H</th><th style="${TH}">${n1}</th><th style="${TH}">${n2||N[1]}</th><th style="${TH}">${N[2]}</th><th style="${TH}">${N[3]}</th></tr>`;
+    const headM= `<tr><th style="${TH}">H</th><th style="${TH}">M戦</th><th style="${TH}">T戦</th><th style="${TH}">${N[0]}</th><th style="${TH}">${N[1]}</th><th style="${TH}">${N[2]}</th><th style="${TH}">${N[3]}</th></tr>`;
+
+    const hCell= (h)=>{const bg=h>=10?"background:#555;":"background:#222;";return`<td style="${bg}color:#fff;font-weight:900;${TD}${HFS}">${h}</td>`;};
+    function sRow(h){return`<tr>${hCell(h)}<td style="${TD}">${state.scores[h]?.[0]??""}</td><td style="${TD}">${state.scores[h]?.[1]??""}</td><td style="${TD}">${state.scores[h]?.[2]??""}</td><td style="${TD}">${state.scores[h]?.[3]??""}</td></tr>`;}
+    function oRow(h){return`<tr>${hCell(h)}<td style="${TD}">${state.games.olympic[h]?.[0]??""}</td><td style="${TD}">${state.games.olympic[h]?.[1]??""}</td><td style="${TD}">${state.games.olympic[h]?.[2]??""}</td><td style="${TD}">${state.games.olympic[h]?.[3]??""}</td></tr>`;}
+    function vCell(v){if(v===""||v===null||v===undefined)return`<td style="${TD}"></td>`;const c=v>0?"color:#c00;font-weight:800":v<0?"color:#06c;font-weight:800":"";return`<td style="${TD}${c}">${fmt(v)}</td>`;}
+    function vRow(h){const row=vegas.pointsByHole[h]||["","","",""];return`<tr>${hCell(h)}${[0,1,2,3].map(p=>vCell(row[p])).join("")}</tr>`;}
+    function mRow(h){
+      const ms=matchSymbol(h),ts=teamMap[h]??"";
+      const msC=ms==="〇"?"color:#c00;font-weight:900":ms==="×"?"color:#06c;font-weight:900":"";
+      const tsC=ts==="〇"?"color:#c00;font-weight:900":ts==="×"?"color:#06c;font-weight:900":"";
+      return`<tr>${hCell(h)}<td style="${TD}${msC}">${ms}</td><td style="${TD}${tsC}">${ts}</td><td style="${TD}">${state.scores[h]?.[0]??""}</td><td style="${TD}">${state.scores[h]?.[1]??""}</td><td style="${TD}">${state.scores[h]?.[2]??""}</td><td style="${TD}">${state.scores[h]?.[3]??""}</td></tr>`;
+    }
+    function sub4(l,v0,v1,v2,v3){return`<tr><th style="${SUB}">${l}</th><td style="${SUB}">${v0}</td><td style="${SUB}">${v1}</td><td style="${SUB}">${v2}</td><td style="${SUB}">${v3}</td></tr>`;}
+    function tot4(v0,v1,v2,v3){return`<tr><th style="${TOT}">合計</th><td style="${TOT}">${v0}</td><td style="${TOT}">${v1}</td><td style="${TOT}">${v2}</td><td style="${TOT}">${v3}</td></tr>`;}
+    function subM(l,v0,v1,v2,v3,m,t){return`<tr><th style="${SUB}">${l}</th><td style="${SUB}">${m}</td><td style="${SUB}">${t}</td><td style="${SUB}">${v0}</td><td style="${SUB}">${v1}</td><td style="${SUB}">${v2}</td><td style="${SUB}">${v3}</td></tr>`;}
+    function totM(v0,v1,v2,v3,m,t){return`<tr><th style="${TOT}">合計</th><td style="${TOT}">${m}</td><td style="${TOT}">${t}</td><td style="${TOT}">${v0}</td><td style="${TOT}">${v1}</td><td style="${TOT}">${v2}</td><td style="${TOT}">${v3}</td></tr>`;}
+    function vSubRow(l,sums){const cells=[0,1,2,3].map(p=>{const v=sums[p];if(v===""||v===null||v===undefined)return`<td style="${SUB}"></td>`;const n=parseInt(v,10);const c=n>0?"color:#c00":n<0?"color:#06c":"";return`<td style="${SUB}${c}">${v}</td>`;}).join("");return`<tr><th style="${SUB}">${l}</th>${cells}</tr>`;}
+    function vTotRow(){const cells=[0,1,2,3].map(p=>{const v=vegas.totals[p];const c=v>0?"color:#c00":v<0?"color:#06c":"";return`<td style="${TOT}${c}">${(v||v===0)?v:""}</td>`;}).join("");return`<tr><th style="${TOT}">合計</th>${cells}</tr>`;}
+
+    let sRows="",oRows="",vRows="",mRows="";
+    for(const h of allOrder){
+      sRows+=sRow(h); oRows+=oRow(h); vRows+=vRow(h); mRows+=mRow(h);
+      if(h===9){
+        sRows+=sub4("OUT",sumRangeForPlayer(0,1,9)||"",sumRangeForPlayer(1,1,9)||"",sumRangeForPlayer(2,1,9)||"",sumRangeForPlayer(3,1,9)||"");
+        oRows+=sub4("OUT",sumOlympicRange(0,1,9)||"",sumOlympicRange(1,1,9)||"",sumOlympicRange(2,1,9)||"",sumOlympicRange(3,1,9)||"");
+        vRows+=vSubRow("OUT",vegasHalfSum(1,9));
+        mRows+=subM("OUT",sumRangeForPlayer(0,1,9)||"",sumRangeForPlayer(1,1,9)||"",sumRangeForPlayer(2,1,9)||"",sumRangeForPlayer(3,1,9)||"",mOut.match,mOut.team);
+      }
+      if(h===18){
+        sRows+=sub4("IN",sumRangeForPlayer(0,10,18)||"",sumRangeForPlayer(1,10,18)||"",sumRangeForPlayer(2,10,18)||"",sumRangeForPlayer(3,10,18)||"");
+        oRows+=sub4("IN",sumOlympicRange(0,10,18)||"",sumOlympicRange(1,10,18)||"",sumOlympicRange(2,10,18)||"",sumOlympicRange(3,10,18)||"");
+        vRows+=vSubRow("IN",vegasHalfSum(10,18));
+        mRows+=subM("IN",sumRangeForPlayer(0,10,18)||"",sumRangeForPlayer(1,10,18)||"",sumRangeForPlayer(2,10,18)||"",sumRangeForPlayer(3,10,18)||"",mIn.match,mIn.team);
+      }
+    }
+
+    const metaLine = `<div style="font-size:14px;font-weight:900;margin-bottom:2px;">⛳ ${state.course||"ゴルフスコア"}</div><div style="font-size:11px;color:#555;margin-bottom:8px;">${state.date||""}</div>`;
+
+    const html =
+      `<div class="pdf-page" style="${PAGE}">${metaLine}<div style="${HDR}">📋 スコア</div><table style="border-collapse:collapse;table-layout:fixed;width:100%;">${col4}<thead>${head4(trophy1+N[0], trophy2+N[1])}</thead><tbody>${sRows}</tbody><tfoot>${tot4(totals[0]||"",totals[1]||"",totals[2]||"",totals[3]||"")}</tfoot></table></div>` +
+      `<div class="pdf-page" style="${PAGE}">${metaLine}<div style="${HDR}">🏅 オリンピック</div><table style="border-collapse:collapse;table-layout:fixed;width:100%;">${col4}<thead>${head4(N[0],N[1])}</thead><tbody>${oRows}</tbody><tfoot>${tot4(sumOlympicRange(0,1,18)||"",sumOlympicRange(1,1,18)||"",sumOlympicRange(2,1,18)||"",sumOlympicRange(3,1,18)||"")}</tfoot></table></div>` +
+      `<div class="pdf-page" style="${PAGE}">${metaLine}<div style="${HDR}">🎰 ラスベガス</div><table style="border-collapse:collapse;table-layout:fixed;width:100%;">${col4}<thead>${head4(N[0],N[1])}</thead><tbody>${vRows}</tbody><tfoot>${vTotRow()}</tfoot></table></div>` +
+      `<div class="pdf-page" style="${LAST}">${metaLine}<div style="${HDR}">⚔️ マッチ / チーム戦</div><table style="border-collapse:collapse;table-layout:fixed;width:100%;">${colM}<thead>${headM}</thead><tbody>${mRows}</tbody><tfoot>${totM(totals[0]||"",totals[1]||"",totals[2]||"",totals[3]||"",full.match,full.team)}</tfoot></table></div>`;
+
+    const page = document.createElement("div");
+    page.innerHTML = html;
+    stage.appendChild(page);
+    return stage;
+  }
+
+  function pdfFilename(){
+    const d = state.date || "nodate";
+    const c = (state.course || "nocourse").replace(/[\\/:*?"<>|]/g,"_");
+    const s = sumOutInForPlayer(0); // 増
+    const out   = (s.out   || 0);
+    const inn   = (s.inn   || 0);
+    const total = out + inn;
+    return `${d}_${c}_OUT${out}_IN${inn}_合計${total}.pdf`;
+  }
+
+  async function savePdf(){
+    const stage = buildPdfDom();
+    const tempWrap = document.createElement("div");
+    tempWrap.style.cssText = "position:fixed;left:0;top:0;width:360px;background:#fff;z-index:-1;clip:rect(0,0,0,0);overflow:hidden;height:1px;";
+
+    const pdfNode = stage.cloneNode(true);
+    pdfNode.style.cssText = "width:360px;position:absolute;top:0;left:0;opacity:0.01;";
+    tempWrap.appendChild(pdfNode);
+    document.body.appendChild(tempWrap);
+
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    const doAfterSave = () => {
+      modalConfirm("PDF保存が終わりました。\n入力データをクリアしますか？", () => {
+        state.viewHalf = "OUT";
+        state.playOrder = [null,null,null,null];
+        state.playOrderOUT = [null,null,null,null];
+        state.playOrderIN  = [null,null,null,null];
+        state.scores = {};
+        state.games = { olympic:{}, vegasOverride:{}, olyCb:{} };
+        state.birdie = {};
+        state.eagle = {};
+        state.teamHandicap = {};
+        save(); updateMeta(); buildTables(); recalcAll();
+        applyHalfVisibility(); applyDormie();
+        setActiveHoleForBirdie(null);
+      });
+    };
+
+    try{
+      // 各ページを個別にキャプチャしてPDFに追加
+      const pageNodes = Array.from(pdfNode.querySelectorAll(".pdf-page"));
+      if(pageNodes.length === 0) pageNodes.push(pdfNode);
+
+      let pdf = null;
+      const jsPDFLib = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if(!jsPDFLib) throw new Error("jsPDF not found");
+
+      for(let i = 0; i < pageNodes.length; i++){
+        const node = pageNodes[i];
+        const nodeW = 360;
+        const nodeH = node.scrollHeight || 600;
+
+        const canvas = await html2canvas(node, {
+          scale: 1,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+          x: 0,
+          y: 0,
+          width: nodeW,
+          height: nodeH,
+          windowWidth: nodeW,
+          windowHeight: nodeH
+        });
+
+        const imgW = canvas.width;
+        const imgH = canvas.height;
+
+        if(pdf === null){
+          pdf = new jsPDFLib({ unit:'px', format:[imgW, imgH], orientation:'portrait', hotfixes:['px_scaling'] });
+        } else {
+          pdf.addPage([imgW, imgH]);
+        }
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
+      }
+
+      if(pdf){
+        pdf.save(pdfFilename());
+        doAfterSave();
+      } else {
+        throw new Error("PDF generation failed");
+      }
+    }catch(e){
+      console.error("PDF保存エラー:", e);
+      // フォールバック：html2pdf
+      try{
+        if(typeof html2pdf === "function"){
+          const opt = {
+            margin:0, filename: pdfFilename(),
+            image:{ type:'jpeg', quality:0.98 },
+            html2canvas:{ scale:1, useCORS:true, backgroundColor:'#ffffff', windowWidth:360, width:360 },
+            jsPDF:{ unit:'pt', format:[360, 900], orientation:'portrait' },
+            pagebreak:{ mode:['avoid-all'] }
+          };
+          await html2pdf().set(opt).from(pdfNode).save();
+          doAfterSave();
+        } else {
+          window.print();
+          doAfterSave();
+        }
+      }catch(e2){ window.print(); doAfterSave(); }
+    }finally{
+      tempWrap.remove();
+    }
+  }
+
+  // ===== タブ切替 =====
+  function switchTab(tab){
+    const score = el("viewScore");
+    const oly   = el("viewOly");
+    const vegas = el("viewVegas");
+    const match = el("viewMatch");
+    const tabScore = el("tabScore");
+    const tabOly   = el("tabOly");
+    const tabVegas = el("tabVegas");
+    const tabMatch = el("tabMatch");
+    [tabScore, tabOly, tabVegas, tabMatch].forEach(t => t && t.classList.remove("active"));
+    [score, oly, vegas, match].forEach(s => s && (s.style.display = "none"));
+    if(tab === "score"){
+      tabScore.classList.add("active");
+      if(score) score.style.display = "";
+    } else if(tab === "oly"){
+      tabOly.classList.add("active");
+      if(oly) oly.style.display = "";
+      recalcAll();
+      applyOlyHighlight();
+    } else if(tab === "vegas"){
+      tabVegas.classList.add("active");
+      if(vegas) vegas.style.display = "";
+      recalcAll();
+    } else if(tab === "match"){
+      tabMatch.classList.add("active");
+      if(match) match.style.display = "";
+      syncMatchTable();
+    }
+    state.activeTab = tab;
+    save();
+  }
+  window.switchTab = switchTab;
+
+  function restoreTab(){
+    const t = state.activeTab;
+    switchTab(["score","oly","vegas","match"].includes(t) ? t : "score");
+  }
+
+  function syncMatchTable(){
+    const N = state.names;
+    const setT = (id, v) => { const n = el(id); if(n) n.textContent = v; };
+    setT("mth1", N[0]); setT("mth2", N[1]); setT("mth3", N[2]); setT("mth4", N[3]);
+    const order = orderOUT;
+    const outStarted = [1,2,3,4,5,6,7,8,9].some(h => {
+      const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
+    });
+    const inStarted = [10,11,12,13,14,15,16,17,18].some(h => {
+      const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
+    });
+    const allOrder = (!outStarted && inStarted)
+      ? [10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]
+      : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
+    const teamMap = teamSymbolsByOrder(order);
+    const body = el("matchBody");
+    body.innerHTML = "";
+    for(const h of allOrder){
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-hole", String(h));
+      const ms = matchSymbol(h);
+      const ts = teamMap[h] || "";
+      const msC = ms==="〇"?"color:#c00;font-weight:900":ms==="×"?"color:#06c;font-weight:900":"";
+      const tsC = ts==="〇"?"color:#c00;font-weight:900":ts==="×"?"color:#06c;font-weight:900":"";
+      const bg = h>=10 ? "background:#f5f5f5" : "";
+      tr.innerHTML = `
+        <th class="sticky holeCol" style="${bg}">${holeLabel(h)}</th>
+        <td class="narrowCol" style="${msC};text-align:center">${ms}</td>
+        <td class="narrowCol" style="${tsC};text-align:center">${ts}</td>
+        <td class="scoreCol" style="text-align:center">${state.scores[h]?.[0]??""}</td>
+        <td class="scoreCol" style="text-align:center">${state.scores[h]?.[1]??""}</td>
+        <td class="scoreCol" style="text-align:center">${state.scores[h]?.[2]??""}</td>
+        <td class="scoreCol" style="text-align:center">${state.scores[h]?.[3]??""}</td>`;
+      body.appendChild(tr);
+    }
+    applyHalfVisibility();
+    const totals = sumPlayerTotal();
+    const full = matchTeamSumsByRange(order, {from:1,to:18});
+    const outS = matchTeamSumsByRange(order, {from:1,to:9});
+    const inS  = matchTeamSumsByRange(order, {from:10,to:18});
+    setT("mSum1", totals[0]||""); setT("mSum2", totals[1]||"");
+    setT("mSum3", totals[2]||""); setT("mSum4", totals[3]||"");
+    setT("mMatchSum", full.match||""); setT("mTeamSum", full.team||"");
+    setT("mOut1", sumRangeForPlayer(0,1,9)); setT("mOut2", sumRangeForPlayer(1,1,9));
+    setT("mOut3", sumRangeForPlayer(2,1,9)); setT("mOut4", sumRangeForPlayer(3,1,9));
+    setT("mMatchOut", outS.match||""); setT("mTeamOut", outS.team||"");
+    setT("mIn1", sumRangeForPlayer(0,10,18)); setT("mIn2", sumRangeForPlayer(1,10,18));
+    setT("mIn3", sumRangeForPlayer(2,10,18)); setT("mIn4", sumRangeForPlayer(3,10,18));
+    setT("mMatchIn", inS.match||""); setT("mTeamIn", inS.team||"");
+  }
+
+  // ===== イベント =====
+    function readOrderFromInputs(){
+    const vals = [el("ord1").value, el("ord2").value, el("ord3").value, el("ord4").value].map(v => (v ?? "").toString().replace(/[^\d]/g,""));
+    const nums = vals.map(v => {
+      const n = parseInt(v,10);
+      return Number.isFinite(n) ? n : null;
+    });
+    // OUT/IN別々に保存
+    if(state.viewHalf === "IN"){
+      state.playOrderIN = nums;
+    } else {
+      state.playOrderOUT = nums;
+    }
+    state.playOrder = nums; // 後方互換
+    save();
+  }
+
+  const ordIds = ["ord1","ord2","ord3","ord4"];
+  ordIds.forEach((id, idx)=>{
+    el(id).addEventListener("input", ()=>{
+      // 入力は数字のみ、1〜4に制限
+      let v = (el(id).value ?? "").toString().replace(/[^\d]/g,"");
+      const n = parseInt(v, 10);
+      if(v !== "" && (n < 1 || n > 4)) v = "";
+      el(id).value = v;
+      readOrderFromInputs();
+      recalcAll(); // ラスベガスの初回チーム分けに反映
+      // 1〜4が入力されたら次の人の欄へ
+      if(v !== "" && n >= 1 && n <= 4){
+        const nextId = ordIds[idx + 1];
+        if(nextId){ el(nextId).focus(); el(nextId).select(); }
+      }
+    });
+    el(id).addEventListener("focus", ()=> setActiveHoleForBirdie(null));
+  });
+
+  el("finishSetup").addEventListener("click", () => {
+    readSetupFromInputs();
+    updateMeta();
+    buildTables();
+    recalcAll();
+    applyHalfVisibility(); applyDormie();
+    setSetupVisible(false);
+  });
+
+  function clearInHalfForSecondNine(){
+  // 初回のOUT→IN切替時のみIN側データをクリアする
+  // 2回目以降（既にinSwitched=trueの場合）はデータを保持する
+  if(state.inSwitched) return;
+  state.inSwitched = true;
+  for(let h=10; h<=18; h++){
+    // scores は保持する（OUT/IN切替しても消さない）
+    // birdie / eagle
+    if(state.birdie && state.birdie[h]) state.birdie[h] = [false,false,false,false];
+    if(state.eagle  && state.eagle[h])  state.eagle[h]  = [false,false,false,false];
+    // olympic / vegas override
+    if(state.games?.olympic && state.games.olympic[h]) state.games.olympic[h] = ["","","",""];
+    if(state.games?.vegasOverride && state.games.vegasOverride[h]) state.games.vegasOverride[h] = ["","","",""];
+    // team handicap checkbox
+    if(state.teamHandicap && state.teamHandicap[h]) delete state.teamHandicap[h];
+  }
+  // 打順は切替時も保持する（消さない）
+}
+
+el("toggleHalf").addEventListener("click", () => {
+  const next = (state.viewHalf === "OUT") ? "IN" : "OUT";
+
+  if(state.viewHalf === "OUT" && next === "IN"){
+    clearInHalfForSecondNine();
+  }
+
+  state.viewHalf = next;
+  save();
+  updateMeta();
+  buildTables();
+  recalcAll();
+  applyHalfVisibility(); applyDormie();
+});
+
+// 最終ホール（同点時は前のホールに遡って）スコア順から打順配列を返す
+function calcNextHoleOrderWithTiebreak(holeOrder){
+  const forIN = holeOrder[0] >= 10;
+  let lastIdx = -1;
+  for(let i = holeOrder.length - 1; i >= 0; i--){
+    const scores = [0,1,2,3].map(p => getScore(holeOrder[i], p));
+    if(scores.every(s => s !== null)){ lastIdx = i; break; }
+  }
+  if(lastIdx < 0) return getInitialOrderPlayers(forIN);
+
+  const players = [0,1,2,3];
+
+  players.sort((a, b) => {
+    for(let i = lastIdx; i >= 0; i--){
+      const h = holeOrder[i];
+      const sa = getScore(h, a);
+      const sb = getScore(h, b);
+      if(sa === null || sb === null) continue;
+      if(sa !== sb) return sa - sb;
+    }
+    const cur = getInitialOrderPlayers(forIN) || [0,1,2,3];
+    return cur.indexOf(a) - cur.indexOf(b);
+  });
+
+  return players;
+}
+
+
+  el("resetAll").addEventListener("click", () => {
+    modalConfirm("全入力を削除します。\nよろしいですか？", () => { resetAll(); });
+  });
+
+  el("btnClear").addEventListener("click", clearEnteredData);
+
+  el("btnSetup").addEventListener("click", () => {
+    setupBox.style.display = "";
+    setupBox.classList.add("small");
+    applySetupToInputs();
+  });
+
+  el("btnPdf").addEventListener("click", savePdf);
+
+  // ===== 起動 =====
+  load();
+  if(state.viewHalf !== "OUT" && state.viewHalf !== "IN"){ state.viewHalf = "OUT"; }
+  applySetupToInputs();
+  updateMeta();
+  buildTables();
+  recalcAll();
+  applyHalfVisibility(); applyDormie();
+  restoreTab();
+
+  if(state.date && state.course){
+    setSetupVisible(false);
+  }else{
+    setSetupVisible(true);
+  }
+})();
+
+</script>
+
+</body>
+</html>
