@@ -198,9 +198,7 @@ inp.addEventListener("input", () => {
         }
       });
 
-      enableBirdieWrapOnRetap(inp, hole);
-
-      // バーディーチェック（スコアの横）
+      // バーディーチェック（PARが不明なコースのみ手動チェックを表示）
       const bw = document.createElement("label");
       bw.className = "birdieWrap";
       bw.setAttribute("data-hole", String(hole));
@@ -214,19 +212,24 @@ inp.addEventListener("input", () => {
       bInp.checked = !!bArr[p];
       eInp.checked = !!eArr[p];
 
-      bInp.addEventListener("change", () => {
-        const a = ensureBoolObj(state.birdie, hole);
-        a[p] = !!bInp.checked;
-        save();
-        recalcAll();
-      });
+      // 手動チェックは PAR 不明コースのみ有効
+      if (!par) {
+        bInp.addEventListener("change", () => {
+          const a = ensureBoolObj(state.birdie, hole);
+          a[p] = !!bInp.checked;
+          save();
+          recalcAll();
+        });
 
-      eInp.addEventListener("change", () => {
-        const a = ensureBoolObj(state.eagle, hole);
-        a[p] = !!eInp.checked;
-        save();
-        recalcAll();
-      });
+        eInp.addEventListener("change", () => {
+          const a = ensureBoolObj(state.eagle, hole);
+          a[p] = !!eInp.checked;
+          save();
+          recalcAll();
+        });
+
+        enableBirdieWrapOnRetap(inp, hole);
+      }
 
       // PAR差分表記（やさと/江戸崎東/江戸崎南のみ）
       const pd = document.createElement("span");
@@ -235,7 +238,7 @@ inp.addEventListener("input", () => {
 
       cell.appendChild(inp);
       cell.appendChild(pd);
-      cell.appendChild(bw);
+      if (!par) cell.appendChild(bw);
       td.appendChild(cell);
       tr.appendChild(td);
 

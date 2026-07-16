@@ -108,7 +108,7 @@ const fmtV = (v, ord, mult)=> {
   }
   const base = (v>0 ? `+${v}` : `${v}`);
   const m = (mult && mult>1) ? `×${mult}` : "";
-  return `${team}${base}(${ord})${m}`;
+  return `${team}${base}${m}`;
 };
 
 
@@ -123,7 +123,7 @@ const fmtV = (v, ord, mult)=> {
         const v = hasOverride ? parseInt(o,10) : vegas.pointsByHole[h]?.[p];
         const ord = vegas.orderNumsByHole?.[h]?.[p];
 
-        inp.value = hasOverride ? (Number.isFinite(v) ? `${v}${ord?`(${ord})`:""}` : "") : fmtV(v, ord, vegas.multByHole?.[h]);
+        inp.value = hasOverride ? (Number.isFinite(v) ? `${v}` : "") : fmtV(v, ord, vegas.multByHole?.[h]);
         inp.style.color = "";
       }
     }
@@ -190,8 +190,12 @@ const fmtV = (v, ord, mult)=> {
         } else { remaining++; }
       });
       if(matchLead !== 0 && Math.abs(matchLead) > remaining){
-        if(matchLead > 0){ if(tr1) tr1.textContent = "🏆"; }
-        else              { if(tr2) tr2.textContent = "🏆"; }
+        if(matchLead > 0){
+          if(tr1) tr1.textContent = "🏆";
+        } else {
+          if(tr2) tr2.textContent = "🏆";
+          if(tr1) tr1.textContent = "😢";
+        }
       }
     }
   }
@@ -338,8 +342,15 @@ const fmtV = (v, ord, mult)=> {
     const matchSet = calcMatchSettlement(full.match, n(state.matchWinAmount));
     const teamSet  = calcTeamSettlement(full.team, n(state.teamHolePrice));
     const s1El = el("mSet1"), s2El = el("mSet2");
-    if(s1El) s1El.textContent = formatYen(matchSet[0]) + (formatYen(matchSet[1]) ? "\n" + formatYen(matchSet[1]) : "");
-    if(s2El) s2El.textContent = formatYen(teamSet[0])  + (formatYen(teamSet[1])  ? "\n" + formatYen(teamSet[1])  : "");
+    // マッチ精算: 増視点で +/- 表示 + 勝ち🏆 / 負け😢
+    {
+      const mAmt = matchSet[0];
+      const mYen = formatYen(mAmt);
+      const mText = mYen ? (mAmt > 0 ? "🏆 " + mYen : "😢 " + mYen) : "";
+      if(s1El) s1El.textContent = mText;
+    }
+    // チーム精算: 増チーム視点で +/- 表示
+    if(s2El) s2El.textContent = formatYen(teamSet[0]) || "";
   }
 
   /** 精算タブ：オリンピック/ラスベガス/マッチ/チームそれぞれの精算金と、その合計を再計算して表示する */
