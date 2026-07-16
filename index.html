@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="ja">
+<head>
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ゴルフスコア">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,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">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>ゴルフスコア v1</title>
+
+  <!-- 起動直後に必要なグローバル関数（applyDormie / exportPDF / SW登録） -->
+  <script src="js/00-bootstrap.js"></script>
+
+  <!-- スタイル -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+
+<body>
+
+<!-- カスタムモーダル -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-btns" id="modalBtns"></div>
+  </div>
+</div>
+  <div class="wrap">
+    <!-- 初期設定 -->
+    <section id="setup" class="setup">
+      <div class="row" style="margin-bottom:8px;">
+        <label>日付 <input id="date" type="date"></label>
+        <label>ゴルフ場
+          <select id="courseSelect">
+            <optgroup label="★よく行くコース">
+              <option value="やさと">やさと</option>
+              <option value="江戸崎東">江戸崎東</option>
+              <option value="江戸崎南">江戸崎南</option>
+            </optgroup>
+            <optgroup label="その他のコース">
+              <option value="グレンオークス">グレンオークス</option>
+              <option value="笠間カントリー">笠間カントリー</option>
+              <option value="出島">出島</option>
+              <option value="オークヒルズ">オークヒルズ</option>
+              <option value="阿見">阿見</option>
+              <option value="ワンウェイ">ワンウェイ</option>
+              <option value="サミット">サミット</option>
+              <option value="霞台筑波">霞台筑波</option>
+              <option value="霞台霞">霞台霞</option>
+              <option value="石岡ウエスト">石岡ウエスト</option>
+              <option value="オールドオーチャード">オールドオーチャード</option>
+              <option value="おかだいら">おかだいら</option>
+              <option value="イーグルレイク">イーグルレイク</option>
+              <option value="成田ヒルズ">成田ヒルズ</option>
+              <option value="石岡">石岡</option>
+              <option value="茨城ゴルフ">茨城ゴルフ</option>
+              <option value="成田東">成田東</option>
+              <option value="豊里">豊里</option>
+              <option value="長太郎">長太郎</option>
+              <option value="マリア">マリア</option>
+              <option value="サンヒルズ">サンヒルズ</option>
+              <option value="南総">南総</option>
+              <option value="金乃台">金乃台</option>
+              <option value="京カントリー">京カントリー</option>
+              <option value="土浦カントリー">土浦カントリー</option>
+              <option value="富士カントリー笠間">富士カントリー笠間</option>
+              <option value="笠間">笠間</option>
+              <option value="東筑波">東筑波</option>
+            </optgroup>
+            <option value="">その他（自由入力）</option>
+          </select>
+        </label>
+      </div>
+      <!-- 27Hコース用ナイン選択（27Hコース選択時のみ表示） -->
+      <div id="nineSelectWrap" class="row" style="margin-bottom:8px;display:none;">
+        <label>OUT <select id="courseNineOut"></select></label>
+        <label>IN  <select id="courseNineIn"></select></label>
+      </div>
+      <!-- その他選択時のゴルフ場名自由入力 -->
+      <div id="courseOtherWrap" class="row" style="margin-bottom:8px;display:none;">
+        <label>ゴルフ場名 <input id="courseOther" type="text" placeholder="例：○○GC"></label>
+      </div>
+      <div class="row nameBox" style="margin-bottom:8px;">
+        <label>増 <input id="n1" type="text" value="増"></label>
+        <label>幸 <input id="n2" type="text" value="幸"></label>
+        <label>牛 <input id="n3" type="text" value="牛"></label>
+        <label>M <input id="n4" type="text" value="M"></label>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="finishSetup">初期設定 完了</button>
+        <button class="btn" id="resetAll" title="全入力を消します">全リセット</button>
+      </div>
+    </section>
+
+    <!-- メタ -->
+    <div class="topline">
+      <div class="meta" id="meta"></div>
+      <div class="meta"><strong id="halfLabel">OUT</strong> <button class="btn" id="toggleHalf" style="padding:6px 10px;font-size:12px;">INへ切替</button></div>
+    </div>
+
+    <!-- タブ切替ボタン -->
+    <div class="tabs" id="viewTabs">
+      <button class="tab active" id="tabScore" onclick="switchTab('score')">スコア</button>
+      <button class="tab" id="tabOly" onclick="switchTab('oly')">オリンピック</button>
+      <button class="tab" id="tabVegas" onclick="switchTab('vegas')">ラスベガス</button>
+      <button class="tab" id="tabMatch" onclick="switchTab('match')">マッチ/チーム</button>
+      <button class="tab" id="tabSettle" onclick="switchTab('settle')">精算</button>
+    </div>
+
+<!-- スコア -->
+    <section id="viewScore">
+      <div class="tableWrap scoreWrap">
+        <table id="scoreTable" class="scrollTable scoreTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">打順</th>
+              <th class="scoreCol"><input id="ord1" class="ordInput" type="text" inputmode="numeric" pattern="[0-9]*" value="" aria-label="打順(増)"></th>
+              <th class="scoreCol"><input id="ord2" class="ordInput" type="text" inputmode="numeric" pattern="[0-9]*" value="" aria-label="打順(幸)"></th>
+              <th class="scoreCol"><input id="ord3" class="ordInput" type="text" inputmode="numeric" pattern="[0-9]*" value="" aria-label="打順(牛)"></th>
+              <th class="scoreCol"><input id="ord4" class="ordInput" type="text" inputmode="numeric" pattern="[0-9]*" value="" aria-label="打順(M)"></th>
+            </tr>
+            <tr>
+              <th class="sticky2 holeCol">Hole</th>
+              <th class="scoreCol"><div class="nameHdr"><span class="trophySlot" id="trophy1"></span><span class="scoreName" id="th1">増</span></div></th>
+              <th class="scoreCol"><div class="nameHdr"><span class="trophySlot" id="trophy2"></span><span class="scoreName" id="th2">幸</span></div></th>
+              <th class="scoreCol"><div class="nameHdr"><span class="scoreName" id="th3">牛</span></div></th>
+              <th class="scoreCol"><div class="nameHdr"><span class="scoreName" id="th4">M</span></div></th>
+            </tr>
+          </thead>
+          <tbody id="scoreBody"></tbody>
+          <tfoot>
+            <tr class="rowSum">
+              <th class="sticky2 rowLabel">合計</th>
+              <td id="tSum1" class="totalCell"></td><td id="tSum2" class="totalCell"></td><td id="tSum3" class="totalCell"></td><td id="tSum4" class="totalCell"></td>
+            </tr>
+            <tr class="rowOut">
+              <th class="sticky2 rowLabel">OUT小計</th>
+              <td id="tOut1" class="totalCell"></td><td id="tOut2" class="totalCell"></td><td id="tOut3" class="totalCell"></td><td id="tOut4" class="totalCell"></td>
+            </tr>
+            <tr class="rowIn">
+              <th class="sticky2 rowLabel">IN小計</th>
+              <td id="tIn1" class="totalCell"></td><td id="tIn2" class="totalCell"></td><td id="tIn3" class="totalCell"></td><td id="tIn4" class="totalCell"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+<!-- マッチ/チーム -->
+    <section id="viewMatch" style="display:none;">
+      <div class="row" style="margin:4px 0 8px;">
+        <label>マッチ勝者 <input id="matchWinAmount" class="rateInput" type="text" inputmode="numeric" pattern="[0-9]*" style="width:70px;"> 円</label>
+        <label>チーム1ホール <input id="teamHolePrice" class="rateInput" type="text" inputmode="numeric" pattern="[0-9]*" style="width:70px;"> 円</label>
+      </div>
+      <div class="tableWrap scoreWrap">
+        <table class="scrollTable scoreTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">Hole</th>
+              <th class="narrowCol">マッチ</th>
+              <th class="narrowCol">チーム</th>
+              <th class="scoreCol" id="mth1">増&牛</th>
+              <th class="scoreCol" id="mth2">幸&M</th>
+            </tr>
+          </thead>
+          <tbody id="matchBody"></tbody>
+          <tfoot>
+            <tr class="rowSum">
+              <th class="sticky2 rowLabel">合計</th>
+              <td id="mMatchSum" class="narrowCol"></td><td id="mTeamSum" class="narrowCol"></td>
+              <td id="mSum1"></td><td id="mSum2"></td>
+            </tr>
+            <tr class="rowOut">
+              <th class="sticky2 rowLabel">OUT小計</th>
+              <td id="mMatchOut" class="narrowCol"></td><td id="mTeamOut" class="narrowCol"></td>
+              <td id="mOut1"></td><td id="mOut2"></td>
+            </tr>
+            <tr class="rowIn">
+              <th class="sticky2 rowLabel">IN小計</th>
+              <td id="mMatchIn" class="narrowCol"></td><td id="mTeamIn" class="narrowCol"></td>
+              <td id="mIn1"></td><td id="mIn2"></td>
+            </tr>
+            <tr class="rowSettle">
+              <th class="sticky2 rowLabel">精算</th>
+              <td class="narrowCol"></td><td class="narrowCol"></td>
+              <td id="mSet1" class="yenCell" style="white-space:pre-line;font-size:0.8em"></td>
+              <td id="mSet2" class="yenCell" style="white-space:pre-line;font-size:0.8em"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+<!-- オリンピック -->
+    <section id="viewOly" style="display:none;">
+      <div class="row" style="margin:4px 0 8px;">
+        <label>1点あたり <input id="olyUnitPrice" class="rateInput" type="text" inputmode="numeric" pattern="[0-9]*" style="width:70px;"> 円</label>
+      </div>
+      <div class="tableWrap gamesWrap">
+        <table id="olyTable" class="scrollTable gamesTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">Hole</th>
+              <th class="scoreCol olyCol" id="go1">増</th>
+              <th class="scoreCol olyCol" id="go2">幸</th>
+              <th class="scoreCol olyCol" id="go3">牛</th>
+              <th class="scoreCol olyCol" id="go4">M</th>
+            </tr>
+          </thead>
+          <tbody id="olyBody"></tbody>
+          <tfoot>
+            <tr class="rowSum">
+              <th class="sticky2 rowLabel">合計</th>
+              <td id="oSum1"></td><td id="oSum2"></td><td id="oSum3"></td><td id="oSum4"></td>
+            </tr>
+            <tr class="rowOut">
+              <th class="sticky2 rowLabel">OUT小計</th>
+              <td id="oOut1"></td><td id="oOut2"></td><td id="oOut3"></td><td id="oOut4"></td>
+            </tr>
+            <tr class="rowIn">
+              <th class="sticky2 rowLabel">IN小計</th>
+              <td id="oIn1"></td><td id="oIn2"></td><td id="oIn3"></td><td id="oIn4"></td>
+            </tr>
+            <tr class="rowSettle">
+              <th class="sticky2 rowLabel">精算</th>
+              <td id="oSet1" class="yenCell"></td><td id="oSet2" class="yenCell"></td><td id="oSet3" class="yenCell"></td><td id="oSet4" class="yenCell"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+<!-- ラスベガス -->
+    <section id="viewVegas" style="display:none;">
+      <div class="row" style="margin:4px 0 8px;">
+        <label>1点あたり <input id="vegasUnitPrice" class="rateInput" type="text" inputmode="numeric" pattern="[0-9]*" style="width:70px;"> 円</label>
+      </div>
+      <div class="tableWrap gamesWrap">
+        <table id="vegasTable" class="scrollTable gamesTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">Hole</th>
+              <th class="scoreCol vegasCol" id="gv1">増</th>
+              <th class="scoreCol vegasCol" id="gv2">幸</th>
+              <th class="scoreCol vegasCol" id="gv3">牛</th>
+              <th class="scoreCol vegasCol" id="gv4">M</th>
+            </tr>
+          </thead>
+          <tbody id="vegasBody"></tbody>
+          <tfoot>
+            <tr class="rowSum">
+              <th class="sticky2 rowLabel">合計</th>
+              <td id="vSum1"></td><td id="vSum2"></td><td id="vSum3"></td><td id="vSum4"></td>
+            </tr>
+            <tr class="rowOut">
+              <th class="sticky2 rowLabel">OUT小計</th>
+              <td id="vOut1"></td><td id="vOut2"></td><td id="vOut3"></td><td id="vOut4"></td>
+            </tr>
+            <tr class="rowIn">
+              <th class="sticky2 rowLabel">IN小計</th>
+              <td id="vIn1"></td><td id="vIn2"></td><td id="vIn3"></td><td id="vIn4"></td>
+            </tr>
+            <tr class="rowSettle">
+              <th class="sticky2 rowLabel">精算</th>
+              <td id="vSet1" class="yenCell"></td><td id="vSet2" class="yenCell"></td><td id="vSet3" class="yenCell"></td><td id="vSet4" class="yenCell"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+<!-- 精算 -->
+    <section id="viewSettle" style="display:none;">
+      <div class="tableWrap scoreWrap">
+        <table class="scrollTable scoreTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">精算</th>
+              <th class="scoreCol" id="sth1">増</th>
+              <th class="scoreCol" id="sth2">幸</th>
+              <th class="scoreCol" id="sth3">牛</th>
+              <th class="scoreCol" id="sth4">M</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th class="sticky2 rowLabel">オリンピック</th>
+              <td id="settleOly1" class="yenCell"></td><td id="settleOly2" class="yenCell"></td><td id="settleOly3" class="yenCell"></td><td id="settleOly4" class="yenCell"></td>
+            </tr>
+            <tr>
+              <th class="sticky2 rowLabel">ラスベガス</th>
+              <td id="settleVegas1" class="yenCell"></td><td id="settleVegas2" class="yenCell"></td><td id="settleVegas3" class="yenCell"></td><td id="settleVegas4" class="yenCell"></td>
+            </tr>
+            <tr>
+              <th class="sticky2 rowLabel">マッチ</th>
+              <td id="settleMatch1" class="yenCell"></td><td id="settleMatch2" class="yenCell"></td><td id="settleMatch3" class="yenCell"></td><td id="settleMatch4" class="yenCell"></td>
+            </tr>
+            <tr>
+              <th class="sticky2 rowLabel">チーム</th>
+              <td id="settleTeam1" class="yenCell"></td><td id="settleTeam2" class="yenCell"></td><td id="settleTeam3" class="yenCell"></td><td id="settleTeam4" class="yenCell"></td>
+            </tr>
+            <tr>
+              <th class="sticky2 rowLabel">合計</th>
+              <td id="settleTotal1" class="yenCell"></td><td id="settleTotal2" class="yenCell"></td><td id="settleTotal3" class="yenCell"></td><td id="settleTotal4" class="yenCell"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- PDF生成用（画面外） -->
+  <div class="pdfStage" id="pdfStage"></div>
+
+  <!-- 下固定バー -->
+  <div class="bottomBar">
+    <button class="btn" id="btnPdf">PDF保存</button>
+    <button class="btn" id="btnClear">入力クリア</button>
+    <button class="btn" id="btnSetup">初期設定へ</button>
+  </div>
+
+<!--
+  アプリ本体のスクリプト群。
+  01〜08 は読み込み順に依存しているため、この順序を変更しないこと。
+  （state定義 → モーダル → 初期設定 → テーブル生成 → 計算ロジック →
+   描画 → PDF出力 → イベント登録/起動 の順）
+-->
+<script src="js/01-state.js"></script>
+<script src="js/02-modal.js"></script>
+<script src="js/03-setup.js"></script>
+<script src="js/04-table-builder.js"></script>
+<script src="js/05a-calc-core.js"></script>
+<script src="js/05b-calc-dormie.js"></script>
+<script src="js/05c-calc-vegas.js"></script>
+<script src="js/06-render.js"></script>
+<script src="js/07-pdf-export.js"></script>
+<script src="js/08-events.js"></script>
+
+</body>
+</html>

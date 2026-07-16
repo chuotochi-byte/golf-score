@@ -1,0 +1,211 @@
+@media (max-width:480px){
+  /* ===== スマホ最適化：1画面に収める ===== */
+  :root{
+    --cellH: 40px;   /* 行の高さ：タップしやすく（Galaxy S25等の画面高さに収めるため44pxから調整） */
+    --font:  22px;   /* 数字を大きく */
+    --holeW: 58px;   /* Hole列幅 */
+  }
+
+  body{ font-size:var(--font); }
+  .wrap{ padding:6px 0 calc(64px + env(safe-area-inset-bottom)) 0; }
+  .topline{ gap:6px; margin-bottom:6px; }
+  .meta{ font-size:11px; }
+  .meta strong{ font-size:13px; }
+  .sectTit{ margin:8px 0 4px; font-size:13px; }
+
+  /* タブが5個になっても隠れないよう横スクロールにする */
+  .tabs{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:0 6px 2px;
+    margin-left:0;
+    margin-right:0;
+  }
+  .tabs .tab{ flex:0 0 auto; }
+
+  /* ==== スコア表：5列を画面幅100%に完全収納 ==== */
+  .tableWrap{ overflow-x:hidden !important; border-left:none; border-right:none; }
+
+  .scoreTable{
+    width:100vw !important;
+    table-layout:fixed !important;
+  }
+  .scoreTable th.sticky2,
+  .scoreTable th.sticky { position:sticky !important; left:0; z-index:3; }
+
+  /* Hole列 */
+  .scoreTable .holeCol{
+    width:var(--holeW) !important;
+    min-width:var(--holeW) !important;
+    max-width:var(--holeW) !important;
+    font-size:16px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    padding:0 2px !important;
+  }
+  .scoreTable .holeCol .hcWrap{
+    font-size:11px !important;
+    gap:1px !important;
+    margin-left:0 !important;
+  }
+  .scoreTable .holeCol .hcWrap input{ width:11px !important; height:11px !important; }
+
+  /*
+    合計/OUT小計/IN小計/精算/マッチ/チーム/オリンピック/ラスベガス等の行見出し。
+    Hole列と同じ幅(58px)に収まるよう文字サイズを縮小する（元は本文と同じ22pxで、
+    はみ出して隣のセルと重なっていた）。
+  */
+  .rowLabel{
+    font-size:13px !important;
+    white-space:nowrap !important;
+    padding:0 2px !important;
+  }
+  /* 精算タブは「オリンピック」「ラスベガス」など見出しが長いため、専用に列幅を広げる */
+  #viewSettle .holeCol{
+    width:88px !important;
+    min-width:88px !important;
+    max-width:88px !important;
+  }
+  #viewSettle .scoreCol{
+    width:calc((100vw - 88px) / 4) !important;
+    min-width:0 !important;
+    max-width:calc((100vw - 88px) / 4) !important;
+  }
+
+  /* スコア4列：残り幅を4等分 */
+  .scoreTable .scoreCol{
+    width:calc((100vw - var(--holeW)) / 4) !important;
+    min-width:0 !important;
+    max-width:calc((100vw - var(--holeW)) / 4) !important;
+    height:var(--cellH) !important;
+    padding:0 !important;
+    position:relative !important;
+  }
+
+  /* マッチ・チーム列は非表示（スコア表では不要） */
+  .scoreTable .narrowCol{ display:none !important; }
+  .scoreTable th.matchHdr,
+  .scoreTable th.teamHdr { display:none !important; }
+
+  /* 打順input */
+  .scoreTable .nameHdr{ gap:0 !important; justify-content:center !important; }
+  .scoreTable .ordInput{
+    width:100% !important;
+    min-width:0 !important;
+    height:var(--cellH) !important;
+    font-size:var(--font) !important;
+    font-weight:700 !important;
+    box-sizing:border-box !important;
+    border:none !important;
+    border-radius:0 !important;
+  }
+
+  /* スコア入力欄 */
+  .scoreTable .scoreInput{
+    width:100% !important;
+    min-width:0 !important;
+    height:100% !important;
+    font-size:var(--font) !important;
+    font-weight:700 !important;
+    box-sizing:border-box !important;
+    border:none !important;
+    border-radius:0 !important;
+  }
+  .scoreTable .scoreCell.hasParDiff .scoreInput{
+    width:auto !important;
+    flex:1 1 40% !important;
+  }
+  .scoreTable .parDiffLabel{
+    flex:1 1 60% !important;
+  }
+
+  /* ==== Olympic / Vegas表：4列を画面幅100%に収納 ==== */
+  .gamesTable{
+    width:100vw !important;
+    table-layout:fixed !important;
+  }
+  .gamesTable th.sticky2,
+  .gamesTable th.sticky { position:sticky !important; left:0; z-index:3; }
+
+  .gamesTable .holeCol{
+    width:var(--holeW) !important;
+    min-width:var(--holeW) !important;
+    max-width:var(--holeW) !important;
+    font-size:16px !important;
+  }
+  .gamesTable .olyCol,
+  .gamesTable .vegasCol{
+    width:calc((100vw - var(--holeW)) / 4) !important;
+    min-width:0 !important;
+    max-width:calc((100vw - var(--holeW)) / 4) !important;
+    height:var(--cellH) !important;
+    padding:0 !important;
+    position:relative !important;
+  }
+  .gamesTable .scoreCell{
+    width:100% !important;
+    height:var(--cellH) !important;
+    display:block !important;
+  }
+  .gamesTable .olyInput,
+  .gamesTable .vegasInput{
+    width:100% !important;
+    min-width:0 !important;
+    height:100% !important;
+    font-size:var(--font) !important;
+    font-weight:700 !important;
+    text-align:center !important;
+    border:none !important;
+    padding:0 !important;
+    box-sizing:border-box !important;
+    border-radius:0 !important;
+  }
+
+  /* Match/Team表も同様 */
+  .gamesTable .narrowCol{
+    width:calc((100vw - var(--holeW)) / 2) !important;
+    min-width:0 !important;
+    font-size:var(--font) !important;
+  }
+
+  /* 精算金額（"+1,500円"等）：1画面に収めるため、折り返さず1行に収まる程度まで縮小する */
+  .yenCell{
+    font-size:11px !important;
+    white-space:nowrap !important;
+    padding:0 1px !important;
+  }
+
+  /* 共通 */
+  th, td{ font-size:var(--font) !important; }
+
+  .narrowCol{ width:56px; min-width:56px; font-size:var(--font); }
+  .scrollHint{ font-size:13px; }
+  .nameHdr span{ font-size:var(--font) !important; font-weight:800; }
+  .birdieWrap{
+    left:50%; bottom:0; transform:translate(-50%,50%);
+    gap:1px; font-size:14px; padding:0 2px; z-index:6;
+  }
+  .birdieWrap input{ width:12px; height:12px; }
+  .btn{ height:32px; padding:0 8px; font-size:13px; }
+  /* font-sizeは16px以上にする（iOS/Android共通：16px未満の入力欄はタップ時に画面が自動ズームされてしまうため） */
+  input[type="text"], input[type="date"], select{
+    height:30px; min-width:82px; font-size:16px;
+  }
+  .nameBox input{ width:46px; min-width:46px; }
+
+  /* オリンピック/ラスベガス/マッチ/チームの単価入力欄：1画面に収めるためコンパクトに */
+  section > .row{ margin:2px 0 4px !important; gap:4px 10px !important; }
+  section > .row label{ font-size:12px !important; }
+  .rateInput{
+    width:52px !important;
+    min-width:52px !important;
+    height:26px !important;
+    font-size:16px !important;
+    padding:0 2px !important;
+  }
+  .sumline{ gap:4px; font-size:10px; }
+  .sumchip{ padding:2px 6px; }
+  .bottomBar{ gap:8px; padding:8px; }
+  .bottomBar .btn{ height:40px; font-size:14px; }
+}
