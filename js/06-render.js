@@ -221,8 +221,7 @@ const fmtV = (v, ord, mult)=> {
     setRow("#scoreBody");
     setRow("#olyBody");
     setRow("#vegasBody");
-    setRow("#matchMatchBody");
-    setRow("#matchTeamBody");
+    setRow("#matchBody");
 
     applyTotalsOrder();
   }
@@ -296,11 +295,8 @@ const fmtV = (v, ord, mult)=> {
   }
 
   function syncMatchTable(){
-    const N = state.names;
-    const setT = (id, v) => { const n = el(id); if(n) n.textContent = v; };
-    setT("mth1", N[0]+"&"+N[2]); setT("mth2", N[1]+"&"+N[3]);
-    setT("mm_p0", N[0]); setT("mm_p1", N[1]);
     const order = orderOUT;
+    const setT = (id, v) => { const n = el(id); if(n) n.textContent = v; };
     const outStarted = [1,2,3,4,5,6,7,8,9].some(h => {
       const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
     });
@@ -311,78 +307,33 @@ const fmtV = (v, ord, mult)=> {
       ? [10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]
       : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
     const teamMap = teamSymbolsByOrder(order);
-    const fmtPair = (a, b) => (a !== null && b !== null) ? a+b : (a !== null ? a : (b !== null ? b : ""));
     const symStyle = (s) => s==="〇"?"color:#c00;font-weight:900":s==="×"?"color:#06c;font-weight:900":"";
-
-    // マッチ戦テーブル（増 vs 幸）
-    const matchBody = el("matchMatchBody");
-    matchBody.innerHTML = "";
+    const body = el("matchBody");
+    body.innerHTML = "";
     for(const h of allOrder){
       const tr = document.createElement("tr");
       tr.setAttribute("data-hole", String(h));
       const ms = matchSymbol(h);
-      const bg = h>=10 ? "background:#f5f5f5" : "";
-      const s0 = getScore(h,0) ?? "";
-      const s1 = getScore(h,1) ?? "";
-      tr.innerHTML = `
-        <th class="sticky holeCol" style="${bg}">${holeLabel(h)}</th>
-        <td class="scoreCol" style="text-align:center">${s0}</td>
-        <td class="scoreCol" style="text-align:center">${s1}</td>
-        <td class="narrowCol" style="${symStyle(ms)};text-align:center">${ms}</td>`;
-      matchBody.appendChild(tr);
-    }
-
-    // チーム戦テーブル（増&牛 vs 幸&M）
-    const teamBody = el("matchTeamBody");
-    teamBody.innerHTML = "";
-    for(const h of allOrder){
-      const tr = document.createElement("tr");
-      tr.setAttribute("data-hole", String(h));
       const ts = teamMap[h] || "";
       const bg = h>=10 ? "background:#f5f5f5" : "";
-      const teamA = fmtPair(getScore(h,0), getScore(h,2));
-      const teamB = fmtPair(getScore(h,1), getScore(h,3));
       tr.innerHTML = `
         <th class="sticky holeCol" style="${bg}">${holeLabel(h)}</th>
-        <td class="scoreCol" style="text-align:center">${teamA}</td>
-        <td class="scoreCol" style="text-align:center">${teamB}</td>
-        <td class="narrowCol" style="${symStyle(ts)};text-align:center">${ts}</td>`;
-      teamBody.appendChild(tr);
+        <td class="scoreCol" style="${symStyle(ms)};text-align:center">${ms}</td>
+        <td class="scoreCol" style="${symStyle(ts)};text-align:center">${ts}</td>`;
+      body.appendChild(tr);
     }
-
     applyHalfVisibility();
     const full = matchTeamSumsByRange(order, {from:1,to:18});
     const outS = matchTeamSumsByRange(order, {from:1,to:9});
     const inS  = matchTeamSumsByRange(order, {from:10,to:18});
-    const teamRng = (p1, p2, from, to) => {
-      const a = sumRangeForPlayer(p1, from, to), b = sumRangeForPlayer(p2, from, to);
-      return (a === "" && b === "") ? "" : (a||0)+(b||0);
-    };
-
-    // マッチ戦フッター
-    setT("mmSum0", sumRangeForPlayer(0,1,18)||""); setT("mmSum1", sumRangeForPlayer(1,1,18)||"");
-    setT("mmOut0", sumRangeForPlayer(0,1,9)||"");  setT("mmOut1", sumRangeForPlayer(1,1,9)||"");
-    setT("mmIn0",  sumRangeForPlayer(0,10,18)||""); setT("mmIn1", sumRangeForPlayer(1,10,18)||"");
-    setT("mMatchSum", full.match||"");
-    setT("mMatchOut", outS.match||"");
-    setT("mMatchIn",  inS.match||"");
-
-    // チーム戦フッター
-    setT("mSum1", teamRng(0,2,1,18)); setT("mSum2", teamRng(1,3,1,18));
-    setT("mOut1", teamRng(0,2,1,9));  setT("mOut2", teamRng(1,3,1,9));
-    setT("mIn1",  teamRng(0,2,10,18)); setT("mIn2", teamRng(1,3,10,18));
-    setT("mTeamSum", full.team||"");
-    setT("mTeamOut", outS.team||"");
-    setT("mTeamIn",  inS.team||"");
-
-    // 精算
+    setT("mMatchSum", full.match||""); setT("mTeamSum", full.team||"");
+    setT("mMatchOut", outS.match||""); setT("mTeamOut", outS.team||"");
+    setT("mMatchIn",  inS.match||"");  setT("mTeamIn",  inS.team||"");
     const matchSet = calcMatchSettlement(full.match, n(state.matchWinAmount));
     const teamSet  = calcTeamSettlement(full.team, n(state.teamHolePrice));
-    setT("mmSet0", formatYen(matchSet[0]));
-    setT("mmSet1", formatYen(matchSet[1]));
     const s1El = el("mSet1"), s2El = el("mSet2");
-    if(s1El) s1El.textContent = formatYen(teamSet[0]);
-    if(s2El) s2El.textContent = formatYen(teamSet[1]);
+    if(s1El) s1El.textContent = formatYen(matchSet[0]) + (formatYen(matchSet[1]) ? "\n" + formatYen(matchSet[1]) : "");
+    if(s2El) s2El.textContent = formatYen(teamSet[0])  + (formatYen(teamSet[1])  ? "\n" + formatYen(teamSet[1])  : "");
   }
 
   /** 精算タブ：オリンピック/ラスベガス/マッチ/チームそれぞれの精算金と、その合計を再計算して表示する */
