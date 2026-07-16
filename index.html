@@ -160,39 +160,70 @@
         <label>マッチ勝者 <input id="matchWinAmount" class="rateInput" type="text" inputmode="numeric" pattern="[0-9]*" style="width:70px;"> 円</label>
         <label>チーム1ホール <input id="teamHolePrice" class="rateInput" type="text" inputmode="numeric" pattern="[0-9]*" style="width:70px;"> 円</label>
       </div>
+      <!-- マッチ戦 -->
+      <div style="font-size:0.85em;font-weight:bold;margin:2px 0 2px 4px;color:#555;">マッチ戦</div>
       <div class="tableWrap scoreWrap">
         <table class="scrollTable scoreTable">
           <thead>
             <tr>
               <th class="sticky2 holeCol">Hole</th>
-              <th class="narrowCol">マッチ</th>
-              <th class="narrowCol">チーム</th>
-              <th class="scoreCol" id="mth1">増&牛</th>
-              <th class="scoreCol" id="mth2">幸&M</th>
+              <th class="scoreCol" id="mm_p0">増</th>
+              <th class="scoreCol" id="mm_p1">幸</th>
+              <th class="narrowCol">結果</th>
             </tr>
           </thead>
-          <tbody id="matchBody"></tbody>
+          <tbody id="matchMatchBody"></tbody>
           <tfoot>
             <tr class="rowSum">
               <th class="sticky2 rowLabel">合計</th>
-              <td id="mMatchSum" class="narrowCol"></td><td id="mTeamSum" class="narrowCol"></td>
-              <td id="mSum1"></td><td id="mSum2"></td>
+              <td id="mmSum0"></td><td id="mmSum1"></td><td id="mMatchSum" class="narrowCol"></td>
             </tr>
             <tr class="rowOut">
               <th class="sticky2 rowLabel">OUT小計</th>
-              <td id="mMatchOut" class="narrowCol"></td><td id="mTeamOut" class="narrowCol"></td>
-              <td id="mOut1"></td><td id="mOut2"></td>
+              <td id="mmOut0"></td><td id="mmOut1"></td><td id="mMatchOut" class="narrowCol"></td>
             </tr>
             <tr class="rowIn">
               <th class="sticky2 rowLabel">IN小計</th>
-              <td id="mMatchIn" class="narrowCol"></td><td id="mTeamIn" class="narrowCol"></td>
-              <td id="mIn1"></td><td id="mIn2"></td>
+              <td id="mmIn0"></td><td id="mmIn1"></td><td id="mMatchIn" class="narrowCol"></td>
             </tr>
             <tr class="rowSettle">
               <th class="sticky2 rowLabel">精算</th>
-              <td class="narrowCol"></td><td class="narrowCol"></td>
+              <td id="mmSet0" class="yenCell"></td><td id="mmSet1" class="yenCell"></td><td class="narrowCol"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <!-- チーム戦 -->
+      <div style="font-size:0.85em;font-weight:bold;margin:8px 0 2px 4px;color:#555;">チーム戦</div>
+      <div class="tableWrap scoreWrap">
+        <table class="scrollTable scoreTable">
+          <thead>
+            <tr>
+              <th class="sticky2 holeCol">Hole</th>
+              <th class="scoreCol" id="mth1">増&牛</th>
+              <th class="scoreCol" id="mth2">幸&M</th>
+              <th class="narrowCol">結果</th>
+            </tr>
+          </thead>
+          <tbody id="matchTeamBody"></tbody>
+          <tfoot>
+            <tr class="rowSum">
+              <th class="sticky2 rowLabel">合計</th>
+              <td id="mSum1"></td><td id="mSum2"></td><td id="mTeamSum" class="narrowCol"></td>
+            </tr>
+            <tr class="rowOut">
+              <th class="sticky2 rowLabel">OUT小計</th>
+              <td id="mOut1"></td><td id="mOut2"></td><td id="mTeamOut" class="narrowCol"></td>
+            </tr>
+            <tr class="rowIn">
+              <th class="sticky2 rowLabel">IN小計</th>
+              <td id="mIn1"></td><td id="mIn2"></td><td id="mTeamIn" class="narrowCol"></td>
+            </tr>
+            <tr class="rowSettle">
+              <th class="sticky2 rowLabel">精算</th>
               <td id="mSet1" class="yenCell" style="white-space:pre-line;font-size:0.8em"></td>
               <td id="mSet2" class="yenCell" style="white-space:pre-line;font-size:0.8em"></td>
+              <td class="narrowCol"></td>
             </tr>
           </tfoot>
         </table>

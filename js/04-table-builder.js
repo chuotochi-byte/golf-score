@@ -376,19 +376,6 @@ inp.addEventListener("input", () => {
     th.className = "sticky holeCol";
     th.style.whiteSpace = "nowrap";
 
-    // ☑ + hole番号
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.id = `olyCb_${hole}`;
-    cb.style.cssText = "width:12px;height:12px;vertical-align:middle;margin-right:2px;";
-    cb.checked = !!(state.games.olyCb && state.games.olyCb[hole]);
-    cb.addEventListener("change", () => {
-      if(!state.games.olyCb) state.games.olyCb = {};
-      state.games.olyCb[hole] = cb.checked;
-      save();
-      applyOlyHighlight();
-    });
-
     const numSpan = document.createElement("span");
     numSpan.textContent = holeLabel(hole);
     numSpan.style.verticalAlign = "middle";
@@ -405,7 +392,6 @@ inp.addEventListener("input", () => {
       applyOlyLock();
     });
 
-    th.appendChild(cb);
     th.appendChild(numSpan);
     th.appendChild(fixBtn);
 

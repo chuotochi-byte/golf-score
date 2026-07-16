@@ -102,14 +102,13 @@
     const vegas = calcVegasPoints(vegasOrder);
     
 const fmtV = (v, ord, mult)=> {
+  const team = (ord===1||ord===4) ? "A" : (ord===2||ord===3) ? "B" : "";
   if(v === "" || v === null || v === undefined) {
-    if(ord === "" || ord === null || ord === undefined) return "";
-    // タイ継続中（スコア未確定）→ チーム表記のみ表示
-    return (ord===1||ord===4) ? "A" : "B";
+    return team;
   }
   const base = (v>0 ? `+${v}` : `${v}`);
   const m = (mult && mult>1) ? `×${mult}` : "";
-  return ord ? `${base}(${ord})${m}` : `${base}${m}`;
+  return `${team}${base}(${ord})${m}`;
 };
 
 
@@ -125,7 +124,7 @@ const fmtV = (v, ord, mult)=> {
         const ord = vegas.orderNumsByHole?.[h]?.[p];
 
         inp.value = hasOverride ? (Number.isFinite(v) ? `${v}${ord?`(${ord})`:""}` : "") : fmtV(v, ord, vegas.multByHole?.[h]);
-        inp.style.color = (typeof v === "number" && v > 0) ? "#c00" : (typeof v === "number" && v < 0) ? "#06c" : "";
+        inp.style.color = "";
       }
     }
     el("vSum1").textContent = vegas.totals[0] ? vegas.totals[0] : (vegas.totals[0]===0 ? "0":"");
@@ -222,7 +221,8 @@ const fmtV = (v, ord, mult)=> {
     setRow("#scoreBody");
     setRow("#olyBody");
     setRow("#vegasBody");
-    setRow("#matchBody");
+    setRow("#matchMatchBody");
+    setRow("#matchTeamBody");
 
     applyTotalsOrder();
   }
@@ -299,6 +299,7 @@ const fmtV = (v, ord, mult)=> {
     const N = state.names;
     const setT = (id, v) => { const n = el(id); if(n) n.textContent = v; };
     setT("mth1", N[0]+"&"+N[2]); setT("mth2", N[1]+"&"+N[3]);
+    setT("mm_p0", N[0]); setT("mm_p1", N[1]);
     const order = orderOUT;
     const outStarted = [1,2,3,4,5,6,7,8,9].some(h => {
       const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
@@ -310,27 +311,45 @@ const fmtV = (v, ord, mult)=> {
       ? [10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]
       : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
     const teamMap = teamSymbolsByOrder(order);
-    const body = el("matchBody");
-    body.innerHTML = "";
     const fmtPair = (a, b) => (a !== null && b !== null) ? a+b : (a !== null ? a : (b !== null ? b : ""));
+    const symStyle = (s) => s==="〇"?"color:#c00;font-weight:900":s==="×"?"color:#06c;font-weight:900":"";
+
+    // マッチ戦テーブル（増 vs 幸）
+    const matchBody = el("matchMatchBody");
+    matchBody.innerHTML = "";
     for(const h of allOrder){
       const tr = document.createElement("tr");
       tr.setAttribute("data-hole", String(h));
       const ms = matchSymbol(h);
+      const bg = h>=10 ? "background:#f5f5f5" : "";
+      const s0 = getScore(h,0) ?? "";
+      const s1 = getScore(h,1) ?? "";
+      tr.innerHTML = `
+        <th class="sticky holeCol" style="${bg}">${holeLabel(h)}</th>
+        <td class="scoreCol" style="text-align:center">${s0}</td>
+        <td class="scoreCol" style="text-align:center">${s1}</td>
+        <td class="narrowCol" style="${symStyle(ms)};text-align:center">${ms}</td>`;
+      matchBody.appendChild(tr);
+    }
+
+    // チーム戦テーブル（増&牛 vs 幸&M）
+    const teamBody = el("matchTeamBody");
+    teamBody.innerHTML = "";
+    for(const h of allOrder){
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-hole", String(h));
       const ts = teamMap[h] || "";
-      const msC = ms==="〇"?"color:#c00;font-weight:900":ms==="×"?"color:#06c;font-weight:900":"";
-      const tsC = ts==="〇"?"color:#c00;font-weight:900":ts==="×"?"color:#06c;font-weight:900":"";
       const bg = h>=10 ? "background:#f5f5f5" : "";
       const teamA = fmtPair(getScore(h,0), getScore(h,2));
       const teamB = fmtPair(getScore(h,1), getScore(h,3));
       tr.innerHTML = `
         <th class="sticky holeCol" style="${bg}">${holeLabel(h)}</th>
-        <td class="narrowCol" style="${msC};text-align:center">${ms}</td>
-        <td class="narrowCol" style="${tsC};text-align:center">${ts}</td>
         <td class="scoreCol" style="text-align:center">${teamA}</td>
-        <td class="scoreCol" style="text-align:center">${teamB}</td>`;
-      body.appendChild(tr);
+        <td class="scoreCol" style="text-align:center">${teamB}</td>
+        <td class="narrowCol" style="${symStyle(ts)};text-align:center">${ts}</td>`;
+      teamBody.appendChild(tr);
     }
+
     applyHalfVisibility();
     const full = matchTeamSumsByRange(order, {from:1,to:18});
     const outS = matchTeamSumsByRange(order, {from:1,to:9});
@@ -339,16 +358,28 @@ const fmtV = (v, ord, mult)=> {
       const a = sumRangeForPlayer(p1, from, to), b = sumRangeForPlayer(p2, from, to);
       return (a === "" && b === "") ? "" : (a||0)+(b||0);
     };
-    setT("mSum1", teamRng(0,2,1,18)); setT("mSum2", teamRng(1,3,1,18));
-    setT("mMatchSum", full.match||""); setT("mTeamSum", full.team||"");
-    setT("mOut1", teamRng(0,2,1,9));  setT("mOut2", teamRng(1,3,1,9));
-    setT("mMatchOut", outS.match||""); setT("mTeamOut", outS.team||"");
-    setT("mIn1",  teamRng(0,2,10,18)); setT("mIn2", teamRng(1,3,10,18));
-    setT("mMatchIn", inS.match||""); setT("mTeamIn", inS.team||"");
 
-    // 精算（マッチ+チーム）—— 増&牛 / 幸&M それぞれ2行表示
+    // マッチ戦フッター
+    setT("mmSum0", sumRangeForPlayer(0,1,18)||""); setT("mmSum1", sumRangeForPlayer(1,1,18)||"");
+    setT("mmOut0", sumRangeForPlayer(0,1,9)||"");  setT("mmOut1", sumRangeForPlayer(1,1,9)||"");
+    setT("mmIn0",  sumRangeForPlayer(0,10,18)||""); setT("mmIn1", sumRangeForPlayer(1,10,18)||"");
+    setT("mMatchSum", full.match||"");
+    setT("mMatchOut", outS.match||"");
+    setT("mMatchIn",  inS.match||"");
+
+    // チーム戦フッター
+    setT("mSum1", teamRng(0,2,1,18)); setT("mSum2", teamRng(1,3,1,18));
+    setT("mOut1", teamRng(0,2,1,9));  setT("mOut2", teamRng(1,3,1,9));
+    setT("mIn1",  teamRng(0,2,10,18)); setT("mIn2", teamRng(1,3,10,18));
+    setT("mTeamSum", full.team||"");
+    setT("mTeamOut", outS.team||"");
+    setT("mTeamIn",  inS.team||"");
+
+    // 精算
     const matchSet = calcMatchSettlement(full.match, n(state.matchWinAmount));
     const teamSet  = calcTeamSettlement(full.team, n(state.teamHolePrice));
+    setT("mmSet0", formatYen(matchSet[0]));
+    setT("mmSet1", formatYen(matchSet[1]));
     const s1El = el("mSet1"), s2El = el("mSet2");
     if(s1El) s1El.textContent = formatYen(teamSet[0]);
     if(s2El) s2El.textContent = formatYen(teamSet[1]);
