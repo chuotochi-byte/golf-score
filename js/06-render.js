@@ -250,18 +250,20 @@ const fmtV = (v, ord, mult)=> {
 
   // ===== タブ切替 =====
   function switchTab(tab){
-    const score = el("viewScore");
-    const oly   = el("viewOly");
-    const vegas = el("viewVegas");
-    const match = el("viewMatch");
-    const settle = el("viewSettle");
-    const tabScore = el("tabScore");
-    const tabOly   = el("tabOly");
-    const tabVegas = el("tabVegas");
-    const tabMatch = el("tabMatch");
-    const tabSettle = el("tabSettle");
-    [tabScore, tabOly, tabVegas, tabMatch, tabSettle].forEach(t => t && t.classList.remove("active"));
-    [score, oly, vegas, match, settle].forEach(s => s && (s.style.display = "none"));
+    const score   = el("viewScore");
+    const oly     = el("viewOly");
+    const vegas   = el("viewVegas");
+    const match   = el("viewMatch");
+    const settle  = el("viewSettle");
+    const history = el("viewHistory");
+    const tabScore   = el("tabScore");
+    const tabOly     = el("tabOly");
+    const tabVegas   = el("tabVegas");
+    const tabMatch   = el("tabMatch");
+    const tabSettle  = el("tabSettle");
+    const tabHistory = el("tabHistory");
+    [tabScore, tabOly, tabVegas, tabMatch, tabSettle, tabHistory].forEach(t => t && t.classList.remove("active"));
+    [score, oly, vegas, match, settle, history].forEach(s => s && (s.style.display = "none"));
     if(tab === "score"){
       tabScore.classList.add("active");
       if(score) score.style.display = "";
@@ -283,6 +285,10 @@ const fmtV = (v, ord, mult)=> {
       tabSettle.classList.add("active");
       if(settle) settle.style.display = "";
       syncSettleTable();
+    } else if(tab === "history"){
+      tabHistory.classList.add("active");
+      if(history) history.style.display = "";
+      initHistoryTab();
     }
     state.activeTab = tab;
     save();
@@ -291,7 +297,7 @@ const fmtV = (v, ord, mult)=> {
 
   function restoreTab(){
     const t = state.activeTab;
-    switchTab(["score","oly","vegas","match","settle"].includes(t) ? t : "score");
+    switchTab(["score","oly","vegas","match","settle","history"].includes(t) ? t : "score");
   }
 
   function syncMatchTable(){

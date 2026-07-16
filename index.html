@@ -113,6 +113,7 @@
       <button class="tab" id="tabVegas" onclick="switchTab('vegas')">ラスベガス</button>
       <button class="tab" id="tabMatch" onclick="switchTab('match')">マッチ/チーム</button>
       <button class="tab" id="tabSettle" onclick="switchTab('settle')">精算</button>
+      <button class="tab" id="tabHistory" onclick="switchTab('history')">履歴</button>
     </div>
 
 <!-- スコア -->
@@ -309,6 +310,25 @@
         </table>
       </div>
     </section>
+
+<!-- 履歴 -->
+    <section id="viewHistory" style="display:none;">
+      <div style="margin:4px 0 10px;">
+        <button class="btn" id="btnSaveRound" style="width:100%;height:42px;font-size:15px;">このラウンドを履歴に保存</button>
+      </div>
+      <div class="row" style="margin:0 0 8px;gap:6px;align-items:center;">
+        <select id="historyFilter" onchange="onHistoryFilterChange()" style="flex:1;min-width:0;">
+          <option value="">全コース</option>
+        </select>
+        <div class="histModes">
+          <button class="histModeBtn active" id="hmBtn_list" onclick="setHistoryMode('list')">一覧</button>
+          <button class="histModeBtn" id="hmBtn_stats" onclick="setHistoryMode('stats')">統計</button>
+          <button class="histModeBtn" id="hmBtn_rank" onclick="setHistoryMode('rank')">順位表</button>
+        </div>
+      </div>
+      <div id="historyList"></div>
+    </section>
+
   </div>
 
   <!-- PDF生成用（画面外） -->
@@ -336,6 +356,7 @@
 <script src="js/05c-calc-vegas.js"></script>
 <script src="js/06-render.js"></script>
 <script src="js/07-pdf-export.js"></script>
+<script src="js/09-history.js"></script>
 <script src="js/08-events.js"></script>
 
 </body>

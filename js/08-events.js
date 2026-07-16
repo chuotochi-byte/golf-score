@@ -145,6 +145,23 @@ function calcNextHoleOrderWithTiebreak(holeOrder){
 
   el("btnPdf").addEventListener("click", savePdf);
 
+  // ラウンド保存ボタン
+  el("btnSaveRound").addEventListener("click", () => {
+    if (!state.course || !state.date) {
+      modalAlert("日付とゴルフ場を入力してから保存してください。");
+      return;
+    }
+    const label = state.course + (state.courseNineOut ? `（${state.courseNineOut}/${state.courseNineIn}）` : "");
+    modalInput(
+      `${state.date}  ${label}\nタグを入力してください（省略可）`,
+      "例: 月例競技、コンペ",
+      (tag) => {
+        saveCurrentRound(tag);
+        modalAlert("ラウンドを保存しました。");
+      }
+    );
+  });
+
   // ===== オリンピック/ラスベガス 1点あたり単価 =====
   el("olyUnitPrice").addEventListener("input", () => {
     state.olympicUnitPrice = sanitizeDigits(el("olyUnitPrice").value);
