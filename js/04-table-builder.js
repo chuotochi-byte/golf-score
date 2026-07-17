@@ -157,15 +157,18 @@ inp.addEventListener("input", () => {
               const next = document.querySelector(`#s_${hole}_${nextPlayer}`);
               if(next){ next.focus(); next.select(); }
             }else{
-              // 全員分のスコアが揃ったらオリンピックタブの先頭へ
-              state.activeOlyHole = hole;
-              save();
-              switchTab('oly');
-              applyOlyLock();
-              const olyFirst = document.getElementById(`oly_${hole}_0`);
-              if(olyFirst){
-                olyFirst.scrollIntoView({behavior:"smooth", block:"center"});
-                setTimeout(()=>{ olyFirst.focus(); olyFirst.select(); }, 200);
+              // 全員入力完了 → 次のホールの先頭へ
+              const viewHoles = state.viewHalf === "IN"
+                ? [10,11,12,13,14,15,16,17,18]
+                : [1,2,3,4,5,6,7,8,9];
+              const hIdx = viewHoles.indexOf(hole);
+              if(hIdx >= 0 && hIdx < viewHoles.length - 1){
+                const nextHole = viewHoles[hIdx + 1];
+                const nextInp = document.getElementById(`s_${nextHole}_0`);
+                if(nextInp){
+                  nextInp.scrollIntoView({behavior:"smooth", block:"center"});
+                  setTimeout(()=>{ nextInp.focus(); nextInp.select(); }, 100);
+                }
               }
             }
           };
@@ -184,15 +187,18 @@ inp.addEventListener("input", () => {
             const next = document.querySelector(`#s_${hole}_${nextPlayer}`);
             if(next){ next.focus(); next.select(); }
           }else{
-            // 全員分のスコアが揃ったらオリンピックタブの先頭へ
-            state.activeOlyHole = hole;
-            save();
-            switchTab('oly');
-            applyOlyLock();
-            const olyFirst = document.getElementById(`oly_${hole}_0`);
-            if(olyFirst){
-              olyFirst.scrollIntoView({behavior:"smooth", block:"center"});
-              setTimeout(()=>{ olyFirst.focus(); olyFirst.select(); }, 200);
+            // 全員入力完了 → 次のホールの先頭へ
+            const viewHoles = state.viewHalf === "IN"
+              ? [10,11,12,13,14,15,16,17,18]
+              : [1,2,3,4,5,6,7,8,9];
+            const hIdx = viewHoles.indexOf(hole);
+            if(hIdx >= 0 && hIdx < viewHoles.length - 1){
+              const nextHole = viewHoles[hIdx + 1];
+              const nextInp = document.getElementById(`s_${nextHole}_0`);
+              if(nextInp){
+                nextInp.scrollIntoView({behavior:"smooth", block:"center"});
+                setTimeout(()=>{ nextInp.focus(); nextInp.select(); }, 100);
+              }
             }
           }
         }

@@ -67,6 +67,22 @@
     recalcAll();
     applyHalfVisibility(); applyDormie();
     setSetupVisible(false);
+    applyGameTabVisibility();
+  });
+
+  // ゲーム選択チェックボックス
+  ["gameOly", "gameVegas", "gameMatch"].forEach(id => {
+    const cb = el(id);
+    if (!cb) return;
+    cb.addEventListener("change", () => {
+      state.gamesEnabled = {
+        olympic: !!el("gameOly").checked,
+        vegas:   !!el("gameVegas").checked,
+        match:   !!el("gameMatch").checked,
+      };
+      save();
+      applyGameTabVisibility();
+    });
   });
 
   function clearInHalfForSecondNine(){
@@ -195,6 +211,7 @@ function calcNextHoleOrderWithTiebreak(holeOrder){
   save(); // マイグレーション済みの値をlocalStorageへ即反映
   if(state.viewHalf !== "OUT" && state.viewHalf !== "IN"){ state.viewHalf = "OUT"; }
   applySetupToInputs();
+  applyGameTabVisibility();
   el("olyUnitPrice").value = state.olympicUnitPrice || "";
   el("vegasUnitPrice").value = state.vegasUnitPrice || "";
   el("matchWinAmount").value = state.matchWinAmount || "";

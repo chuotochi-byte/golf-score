@@ -113,6 +113,10 @@ function applySetupToInputs() {
   el("n2").value = state.names[1] || "幸";
   el("n3").value = state.names[2] || "牛";
   el("n4").value = state.names[3] || "M";
+  const ge = state.gamesEnabled || {};
+  el("gameOly").checked   = ge.olympic !== false;
+  el("gameVegas").checked = ge.vegas   !== false;
+  el("gameMatch").checked = ge.match   !== false;
 }
 
 /** 初期設定フォームの入力値を state へ反映して保存する */
@@ -134,7 +138,28 @@ function readSetupFromInputs() {
     (el("n3").value || "牛").trim() || "牛",
     (el("n4").value || "M").trim() || "M",
   ];
+  state.gamesEnabled = {
+    olympic: !!el("gameOly").checked,
+    vegas:   !!el("gameVegas").checked,
+    match:   !!el("gameMatch").checked,
+  };
   save();
+}
+
+/** ゲーム選択に合わせてタブの表示/非表示を切り替える */
+function applyGameTabVisibility() {
+  const ge = state.gamesEnabled || {};
+  const show = (id, vis) => { const n = el(id); if (n) n.style.display = vis ? "" : "none"; };
+  show("tabOly",   ge.olympic !== false);
+  show("tabVegas", ge.vegas   !== false);
+  show("tabMatch", ge.match   !== false);
+  // 現在アクティブなタブが非表示になった場合はスコアタブへ
+  const t = state.activeTab;
+  if ((t === "oly"   && ge.olympic === false) ||
+      (t === "vegas" && ge.vegas   === false) ||
+      (t === "match" && ge.match   === false)) {
+    switchTab("score");
+  }
 }
 
 const setupBox = el("setup");

@@ -75,6 +75,7 @@ const state = {
   vegasUnitPrice: "50",    // ラスベガス戦 1点あたりの金額（円）
   matchWinAmount: "2000",  // マッチ戦 勝者の精算金額（円、負けた方はマイナス）
   teamHolePrice: "1000",   // チーム戦 1ホールあたりの精算単価（円）
+  gamesEnabled: { olympic: true, vegas: true, match: true }, // ゲーム選択（false=タブ非表示）
 };
 
 // OUT基準のホール巡回順: Hole1..18固定
