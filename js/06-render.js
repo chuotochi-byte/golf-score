@@ -102,12 +102,10 @@
     const vegas = calcVegasPoints(vegasOrder);
     
 const fmtV = (v, ord, mult)=> {
-  const team = (ord===1||ord===4) ? "A" : (ord===2||ord===3) ? "B" : "";
-  if(v === "" || v === null || v === undefined) {
-    return team;
-  }
-  const base = (v>0 ? `+${v}` : `${v}`);
-  const m = (mult && mult>1) ? `×${mult}` : "";
+  if (v === "" || v === null || v === undefined) return "";
+  const team = v > 0 ? "A" : v < 0 ? "B" : "";
+  const base = v > 0 ? `+${v}` : `${v}`;
+  const m = (mult && mult > 1) ? `×${mult}` : "";
   return `${team}${base}${m}`;
 };
 

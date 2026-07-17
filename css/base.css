@@ -543,6 +543,12 @@ input.scoreInput{
   padding:2px 6px;
   white-space:nowrap;
 }
+.histMyScore{
+  display:flex;
+  gap:16px;
+  font-size:14px;
+  padding:2px 0;
+}
 .histDelBtn{
   margin-left:auto;
   background:none;

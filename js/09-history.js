@@ -103,7 +103,7 @@ function renderHistoryView() {
   _renderList(filtered);
 }
 
-// ===== 一覧表示 =====
+// ===== 一覧表示（自分＝player 0 のスコアのみ） =====
 
 function _renderList(rounds) {
   const listEl = el("historyList");
@@ -113,14 +113,11 @@ function _renderList(rounds) {
     return;
   }
   listEl.innerHTML = rounds.map(r => {
-    const label = r.course + (r.nineOut ? `（${r.nineOut}/${r.nineIn}）` : "");
+    const label   = r.course + (r.nineOut ? `（${r.nineOut}/${r.nineIn}）` : "");
     const tagHtml = r.tag ? `<span class="histTag">${r.tag}</span>` : "";
-    const rows = r.names.map((name, p) => {
-      const o = r.out[p]   || 0;
-      const i = r.in[p]    || 0;
-      const t = r.total[p] || 0;
-      return `<tr><td>${name}</td><td>${o || "—"}</td><td>${i || "—"}</td><td><b>${t || "—"}</b></td></tr>`;
-    }).join("");
+    const myOut   = r.out[0]   || 0;
+    const myIn    = r.in[0]    || 0;
+    const myTotal = r.total[0] || 0;
     return `
 <div class="histCard">
   <div class="histHead">
@@ -129,15 +126,16 @@ function _renderList(rounds) {
     ${tagHtml}
     <button class="histDelBtn" onclick="confirmDeleteRound('${r.id}')">✕</button>
   </div>
-  <table class="histTable">
-    <thead><tr><th>名前</th><th>OUT</th><th>IN</th><th>合計</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
+  <div class="histMyScore">
+    <span>OUT <b>${myOut || "—"}</b></span>
+    <span>IN <b>${myIn || "—"}</b></span>
+    <span>合計 <b>${myTotal || "—"}</b></span>
+  </div>
 </div>`;
   }).join("");
 }
 
-// ===== 統計表示 =====
+// ===== 統計表示（自分＝player 0 のみ） =====
 
 function _renderStats(rounds) {
   const listEl = el("historyList");
@@ -147,20 +145,28 @@ function _renderStats(rounds) {
     return;
   }
   const recent = rounds.slice(0, 10);
-  const names  = rounds[0].names;
-  const rows   = [0,1,2,3].map(p => {
-    const recTots = recent.map(r => r.total[p]).filter(v => v > 0);
-    const avg     = recTots.length
-      ? (recTots.reduce((a, b) => a + b, 0) / recTots.length).toFixed(1) : "—";
-    const allTots = rounds.map(r => r.total[p]).filter(v => v > 0);
-    const best    = allTots.length ? Math.min(...allTots) : "—";
-    return `<tr><td>${names[p]}</td><td>${avg}</td><td>${best}</td><td>${allTots.length}</td></tr>`;
-  }).join("");
+
+  const avg = (arr) => arr.length
+    ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : "—";
+  const best = (arr) => arr.length ? Math.min(...arr) : "—";
+  const filt = (arr) => arr.filter(v => v > 0);
+
+  const rTots = filt(recent.map(r => r.total[0]));
+  const rOuts = filt(recent.map(r => r.out[0]));
+  const rIns  = filt(recent.map(r => r.in[0]));
+  const aTots = filt(rounds.map(r => r.total[0]));
+  const aOuts = filt(rounds.map(r => r.out[0]));
+  const aIns  = filt(rounds.map(r => r.in[0]));
+
   listEl.innerHTML = `
-<div class="histSubTitle">直近${recent.length}ラウンド平均 ／ 全${rounds.length}ラウンド</div>
+<div class="histSubTitle">直近${recent.length}ラウンド平均 ／ 全${rounds.length}ラウンド（${aTots.length}回）</div>
 <table class="histTable histWide">
-  <thead><tr><th>名前</th><th>平均</th><th>ベスト</th><th>回数</th></tr></thead>
-  <tbody>${rows}</tbody>
+  <thead><tr><th></th><th>平均</th><th>ベスト</th></tr></thead>
+  <tbody>
+    <tr><td>合計</td><td><b>${avg(rTots)}</b></td><td>${best(aTots)}</td></tr>
+    <tr><td>OUT</td><td>${avg(rOuts)}</td><td>${best(aOuts)}</td></tr>
+    <tr><td>IN</td><td>${avg(rIns)}</td><td>${best(aIns)}</td></tr>
+  </tbody>
 </table>`;
 }
 
