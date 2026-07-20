@@ -61,20 +61,23 @@
     white-space:nowrap !important;
     padding:0 2px !important;
   }
-  /* 精算タブは「オリンピック」「ラスベガス」など見出しが長いため、専用に列幅を広げる */
+  /* 精算タブ：ピクセル指定だとサブピクセル丸めで overflow が起きるためパーセント指定に変更
+     22 + 19.5×4 = 100% で端末幅に関係なく必ずぴったり収まる */
+  #viewSettle .scoreTable{
+    width:100% !important;
+  }
+  #viewSettle .tableWrap{
+    overflow-x:hidden !important;
+  }
   #viewSettle .holeCol{
-    width:88px !important;
-    min-width:88px !important;
-    max-width:88px !important;
+    width:22% !important;
+    min-width:0 !important;
+    max-width:22% !important;
   }
   #viewSettle .scoreCol{
-    width:calc((100vw - 88px) / 4) !important;
+    width:19.5% !important;
     min-width:0 !important;
-    max-width:calc((100vw - 88px) / 4) !important;
-  }
-  /* 精算タブ：金額が列幅を超えて隠れないよう折り返しを許可し横スクロール解放 */
-  #viewSettle .tableWrap{
-    overflow-x:auto !important;
+    max-width:19.5% !important;
   }
   #viewSettle .yenCell{
     white-space:normal !important;
