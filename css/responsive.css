@@ -72,6 +72,17 @@
     min-width:0 !important;
     max-width:calc((100vw - 88px) / 4) !important;
   }
+  /* 精算タブ：金額が列幅を超えて隠れないよう折り返しを許可し横スクロール解放 */
+  #viewSettle .tableWrap{
+    overflow-x:auto !important;
+  }
+  #viewSettle .yenCell{
+    white-space:normal !important;
+    word-break:break-all !important;
+    font-size:10px !important;
+    line-height:1.3 !important;
+    padding:1px 2px !important;
+  }
 
   /* スコア4列：残り幅を4等分 */
   .scoreTable .scoreCol{
