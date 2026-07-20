@@ -375,19 +375,21 @@
     // ===== 精算ページ用の描画関数 =====
     function drawSettleHead(ctx, y){
       let x=MARGIN;
-      drawCell(ctx,x,y,SETTLE_LABEL_W,ROW_H,"精算",{bg:"#222",fg:"#fff",bold:true,fs:13}); x+=SETTLE_LABEL_W;
-      [N[0],N[1],N[2],N[3]].forEach(n=>{ drawCell(ctx,x,y,COL4S_W,ROW_H,n,{bg:"#ccc",bold:true,fs:13}); x+=COL4S_W; });
+      drawCell(ctx,x,y,SETTLE_LABEL_W,ROW_H,"精算",{bg:"#222",fg:"#fff",bold:true,fs:14}); x+=SETTLE_LABEL_W;
+      [N[0],N[1],N[2],N[3]].forEach(n=>{ drawCell(ctx,x,y,COL4S_W,ROW_H,n,{bg:"#ccc",bold:true,fs:14}); x+=COL4S_W; });
       return y+ROW_H;
     }
     function drawSettleRow(ctx, y, label, vals, isTotal){
       let x=MARGIN;
       const bg = isTotal ? "#111" : "#eee";
       const labelFg = isTotal ? "#fff" : "#000";
-      drawCell(ctx,x,y,SETTLE_LABEL_W,ROW_H,label,{bg,fg:labelFg,bold:true,fs:13}); x+=SETTLE_LABEL_W;
+      const labelFs = isTotal ? 14 : 14;
+      const valFs   = isTotal ? 16 : 14;
+      drawCell(ctx,x,y,SETTLE_LABEL_W,ROW_H,label,{bg,fg:labelFg,bold:true,fs:labelFs}); x+=SETTLE_LABEL_W;
       vals.forEach(v=>{
         const n = parseInt(v,10);
         const fg = isTotal ? (n>0?"#f88":n<0?"#88f":"#fff") : (n>0?"#c00":n<0?"#06c":"#000");
-        drawCell(ctx,x,y,COL4S_W,ROW_H,v,{bg,fg,bold:true,fs:14}); x+=COL4S_W;
+        drawCell(ctx,x,y,COL4S_W,ROW_H,v,{bg,fg,bold:true,fs:valFs}); x+=COL4S_W;
       });
       return y+ROW_H;
     }
