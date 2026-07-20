@@ -354,8 +354,19 @@ const fmtV = (v, ord, mult)=> {
   /** 精算タブ：オリンピック/ラスベガス/マッチ/チームそれぞれの精算金と、その合計を再計算して表示する */
   function syncSettleTable(){
     const N = state.names;
+    const ge = state.gamesEnabled || {};
+    const doOly   = ge.olympic !== false;
+    const doVegas = ge.vegas   !== false;
+    const doMatch = ge.match   !== false;
     const setT = (id, v) => { const node = el(id); if(node) node.textContent = v; };
     setT("sth1", N[0]); setT("sth2", N[1]); setT("sth3", N[2]); setT("sth4", N[3]);
+
+    // ゲーム選択に応じて行を表示/非表示
+    const showRow = (id, vis) => { const n = el(id); if (n) n.style.display = vis ? "" : "none"; };
+    showRow("settleRowOly",   doOly);
+    showRow("settleRowVegas", doVegas);
+    showRow("settleRowMatch", doMatch);
+    showRow("settleRowTeam",  doMatch);
 
     const oTotals = [0,1,2,3].map(p => sumOlympicRange(p,1,18));
     const oSettle = calcSettlement(oTotals, n(state.olympicUnitPrice));
@@ -370,11 +381,11 @@ const fmtV = (v, ord, mult)=> {
     for(let p=0;p<4;p++){
       const oV = oSettle[p], vV = vSettle[p];
       const mV = matchSettle[p], tV = teamSettle[p];
-      setT(`settleOly${p+1}`, formatYen(oV));
+      setT(`settleOly${p+1}`,   formatYen(oV));
       setT(`settleVegas${p+1}`, formatYen(vV));
       setT(`settleMatch${p+1}`, formatYen(mV));
-      setT(`settleTeam${p+1}`, formatYen(tV));
-      const total = (oV||0) + (vV||0) + mV + tV;
+      setT(`settleTeam${p+1}`,  formatYen(tV));
+      const total = (doOly ? (oV||0) : 0) + (doVegas ? (vV||0) : 0) + (doMatch ? mV + tV : 0);
       setT(`settleTotal${p+1}`, formatYen(total));
     }
   }

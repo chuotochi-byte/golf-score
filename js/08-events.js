@@ -82,6 +82,7 @@
       };
       save();
       applyGameTabVisibility();
+      syncSettleTable();
     });
   });
 
