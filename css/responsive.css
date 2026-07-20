@@ -61,7 +61,20 @@
     white-space:nowrap !important;
     padding:0 2px !important;
   }
-  /* 精算タブはラベルをスコアと同じ短縮表記にしたので列幅も共通ルールに任せる */
+  /* 精算タブは「オリンピック」など見出しが長いため専用列幅 */
+  #viewSettle .scoreTable{
+    width:100% !important;
+  }
+  #viewSettle .holeCol{
+    width:22% !important;
+    min-width:0 !important;
+    max-width:22% !important;
+  }
+  #viewSettle .scoreCol{
+    width:19.5% !important;
+    min-width:0 !important;
+    max-width:19.5% !important;
+  }
   #viewSettle .yenCell{
     white-space:normal !important;
     word-break:break-all !important;

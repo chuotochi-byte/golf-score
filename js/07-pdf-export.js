@@ -218,7 +218,7 @@
     const COL4_W = (CW - HOLE_W) / 4;
     const MATCH_W = 40;
     const COL4M_W = (CW - HOLE_W - MATCH_W*2) / 4;
-    const SETTLE_LABEL_W = 50;
+    const SETTLE_LABEL_W = 115;
     const COL4S_W = (CW - SETTLE_LABEL_W) / 4;
 
     function makeCanvas(height){
@@ -466,11 +466,11 @@
       (doMatch ? matchSettle[p] + teamSettle[p] : 0)
     );
 
-    if(doOly)   y5 = drawSettleRow(c5, y5, "オ", oSettle.map(v=>formatYen(v)));
-    if(doVegas) y5 = drawSettleRow(c5, y5, "ベ", vSettle.map(v=>formatYen(v)));
+    if(doOly)   y5 = drawSettleRow(c5, y5, "オリンピック", oSettle.map(v=>formatYen(v)));
+    if(doVegas) y5 = drawSettleRow(c5, y5, "ラスベガス",   vSettle.map(v=>formatYen(v)));
     if(doMatch) {
-      y5 = drawSettleRow(c5, y5, "マ", matchSettle.map(v=>formatYen(v)));
-      y5 = drawSettleRow(c5, y5, "チ", teamSettle.map(v=>formatYen(v)));
+      y5 = drawSettleRow(c5, y5, "マッチ", matchSettle.map(v=>formatYen(v)));
+      y5 = drawSettleRow(c5, y5, "チーム", teamSettle.map(v=>formatYen(v)));
     }
     y5 = drawSettleRow(c5, y5, "合計", totalSettle.map(v=>formatYen(v)), true);
 
