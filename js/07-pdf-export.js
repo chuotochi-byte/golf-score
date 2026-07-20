@@ -483,7 +483,7 @@
     function addCanvasPage(cv, isFirst){
       const imgData = cv.toDataURL("image/jpeg", 0.92);
       const imgH = canvasToMm(cv);
-      if(!isFirst) doc.addPage([A4W, imgH]);
+      if(!isFirst) doc.addPage([A4W, imgH], 'portrait');
       doc.addImage(imgData, 'JPEG', 0, 0, A4W, imgH, '', 'FAST');
     }
 
