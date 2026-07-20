@@ -61,24 +61,7 @@
     white-space:nowrap !important;
     padding:0 2px !important;
   }
-  /* 精算タブ：ピクセル指定だとサブピクセル丸めで overflow が起きるためパーセント指定に変更
-     22 + 19.5×4 = 100% で端末幅に関係なく必ずぴったり収まる */
-  #viewSettle .scoreTable{
-    width:100% !important;
-  }
-  #viewSettle .tableWrap{
-    overflow-x:hidden !important;
-  }
-  #viewSettle .holeCol{
-    width:22% !important;
-    min-width:0 !important;
-    max-width:22% !important;
-  }
-  #viewSettle .scoreCol{
-    width:19.5% !important;
-    min-width:0 !important;
-    max-width:19.5% !important;
-  }
+  /* 精算タブはラベルをスコアと同じ短縮表記にしたので列幅も共通ルールに任せる */
   #viewSettle .yenCell{
     white-space:normal !important;
     word-break:break-all !important;
