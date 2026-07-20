@@ -450,9 +450,7 @@
     const doOly   = ge.olympic !== false;
     const doVegas = ge.vegas   !== false;
     const doMatch = ge.match   !== false;
-    const settleRowCount = (doOly ? 1 : 0) + (doVegas ? 1 : 0) + (doMatch ? 2 : 0) + 1;
-    const settleH = TITLE_H + ROW_H + settleRowCount * ROW_H + 50;
-    const {cv:cv5, ctx:c5} = makeCanvas(settleH);
+    const {cv:cv5, ctx:c5} = makeCanvas(pH);
     drawMeta(c5, 0, "💰 Settlement");
     let y5 = TITLE_H;
     y5 = drawSettleHead(c5, y5);
