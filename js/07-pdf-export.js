@@ -218,7 +218,7 @@
     const COL4_W = (CW - HOLE_W) / 4;
     const MATCH_W = 40;
     const COL4M_W = (CW - HOLE_W - MATCH_W*2) / 4;
-    const SETTLE_LABEL_W = 115;
+    const SETTLE_LABEL_W = 50;
     const COL4S_W = (CW - SETTLE_LABEL_W) / 4;
 
     function makeCanvas(height){
