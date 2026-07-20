@@ -466,11 +466,11 @@
       (doMatch ? matchSettle[p] + teamSettle[p] : 0)
     );
 
-    if(doOly)   y5 = drawSettleRow(c5, y5, "オリンピック", oSettle.map(v=>formatYen(v)));
-    if(doVegas) y5 = drawSettleRow(c5, y5, "ラスベガス",   vSettle.map(v=>formatYen(v)));
+    if(doOly)   y5 = drawSettleRow(c5, y5, "オ", oSettle.map(v=>formatYen(v)));
+    if(doVegas) y5 = drawSettleRow(c5, y5, "ベ", vSettle.map(v=>formatYen(v)));
     if(doMatch) {
-      y5 = drawSettleRow(c5, y5, "マッチ", matchSettle.map(v=>formatYen(v)));
-      y5 = drawSettleRow(c5, y5, "チーム", teamSettle.map(v=>formatYen(v)));
+      y5 = drawSettleRow(c5, y5, "マ", matchSettle.map(v=>formatYen(v)));
+      y5 = drawSettleRow(c5, y5, "チ", teamSettle.map(v=>formatYen(v)));
     }
     y5 = drawSettleRow(c5, y5, "合計", totalSettle.map(v=>formatYen(v)), true);
 
