@@ -76,7 +76,6 @@ function matchSymbol(hole) {
  */
 function teamSymbolsByOrder(order) {
   const out = {};
-  let pending = [];
   for (const hole of order) {
     const a1 = getScore(hole, 0), a2 = getScore(hole, 2);
     const b1 = getScore(hole, 1), b2 = getScore(hole, 3);
@@ -87,18 +86,8 @@ function teamSymbolsByOrder(order) {
     const A = a1 + a2;
     let B = b1 + b2;
     if (state.teamHandicap && state.teamHandicap[hole]) B = B - 1;
-
-    if (A === B) {
-      out[hole] = symTie;
-      pending.push(hole);
-    } else {
-      const res = (A < B) ? symWin : symLose;
-      out[hole] = res;
-      if (pending.length) {
-        for (const ph of pending) out[ph] = res;
-        pending = [];
-      }
-    }
+    if (A === B) out[hole] = symTie;
+    else out[hole] = (A < B) ? symWin : symLose;
   }
   return out;
 }

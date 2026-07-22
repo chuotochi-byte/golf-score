@@ -100,6 +100,22 @@
 
     // Vegas（自動計算 + 手入力上書き）
     const vegas = calcVegasPoints(vegasOrder);
+
+    // INスタート時：OUTの打順表示をH18結果から動的更新
+    {
+      const inS = vegasOrder[0] >= 10;
+      if(inS && state.viewHalf !== "IN") {
+        const h1Ord = vegas.orderNumsByHole[1];
+        if(h1Ord) {
+          [0,1,2,3].forEach(p => {
+            const inp = el(`ord${p+1}`);
+            if(inp && document.activeElement !== inp && h1Ord[p] !== "") {
+              inp.value = String(h1Ord[p]);
+            }
+          });
+        }
+      }
+    }
     
 const fmtV = (v, ord, mult)=> {
   if (v === "" || v === null || v === undefined) return "";

@@ -352,7 +352,7 @@ inp.addEventListener("input", () => {
         if(hasOverride){
           inp.value = sanitizeSignedInt(String(overrideRaw));
         }else{
-          const autoVegas = calcVegasPoints(orderOUT);
+          const autoVegas = calcVegasPoints(typeof getVegasOrder === "function" ? getVegasOrder() : orderOUT);
           const autoVal = autoVegas.pointsByHole?.[hole]?.[p];
           inp.value = (autoVal === "" || autoVal === null || autoVal === undefined) ? "" : (autoVal > 0 ? `+${autoVal}` : `${autoVal}`);
         }
