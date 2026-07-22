@@ -69,9 +69,6 @@
     const firstHole = order[0] || 1;
     const forIN = firstHole >= 10;
     let prevOrderPlayers = getInitialOrderPlayers(forIN) || [0,1,2,3];
-    // チームは最初の打順で固定（ホールごとに組み替えない）
-    const fixedAIdx = [prevOrderPlayers[0], prevOrderPlayers[3]];
-    const fixedBIdx = [prevOrderPlayers[1], prevOrderPlayers[2]];
     let pushStreak = 0;
 
     for(let idx=0; idx<order.length; idx++){
@@ -97,8 +94,8 @@
         orderNumsByHole[hole][playerIdx] = ord + 1;
       }
 
-      const aIdx = fixedAIdx;
-      const bIdx = fixedBIdx;
+      const aIdx = [prevOrderPlayers[0], prevOrderPlayers[3]];
+      const bIdx = [prevOrderPlayers[1], prevOrderPlayers[2]];
 
       const aS = aIdx.map(p=>getScore(hole,p));
       const bS = bIdx.map(p=>getScore(hole,p));
