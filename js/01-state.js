@@ -262,15 +262,16 @@ function load() {
     if (!Array.isArray(state.playOrderIN))  state.playOrderIN  = [null, null, null, null];
     if (state.firstHalf === undefined) state.firstHalf = null;
     // firstHalf未設定の場合、既存スコアから推定（打順未入力の旧データ向け後方互換）
+    // スコア入力数が多い方を先行ハーフと判断（両方ある場合もOUT優先で概ね正しい）
     if (state.firstHalf === null) {
-      const hasOUT = [1,2,3,4,5,6,7,8,9].some(h => {
+      const count = (hs) => hs.filter(h => {
         const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
-      });
-      const hasIN = [10,11,12,13,14,15,16,17,18].some(h => {
-        const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
-      });
-      if (hasOUT && !hasIN) state.firstHalf = "OUT";
-      else if (hasIN && !hasOUT) state.firstHalf = "IN";
+      }).length;
+      const nOut = count([1,2,3,4,5,6,7,8,9]);
+      const nIn  = count([10,11,12,13,14,15,16,17,18]);
+      if (nOut > 0 || nIn > 0) {
+        state.firstHalf = (nIn > nOut) ? "IN" : "OUT";
+      }
     }
     if (state.courseNineOut === undefined)  state.courseNineOut = null;
     if (state.courseNineIn  === undefined)  state.courseNineIn  = null;
