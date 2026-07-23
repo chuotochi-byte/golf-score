@@ -32,6 +32,7 @@ function clearEnteredData() {
     state.eagle = {};
     state.teamHandicap = {};
     state.inSwitched = false;
+    state.firstHalf = null;
     save();
     updateMeta();
     buildTables();

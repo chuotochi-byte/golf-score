@@ -124,6 +124,12 @@ inp.addEventListener("input", () => {
         inp.value = v;
         arr[p] = v;
 
+        // 打順未入力でもスコア最初の入力でfirstHalfを確定（フォールバック）
+        if(state.firstHalf === null && v !== "") {
+          state.firstHalf = (hole >= 10) ? "IN" : "OUT";
+          save();
+        }
+
         // PARが分かるコース（やさと/江戸崎東/江戸崎南）なら、スコアからバーディー/イーグルを自動判定する
         const parForAuto = getParForHole(hole);
         if(parForAuto != null){

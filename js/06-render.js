@@ -21,8 +21,15 @@
  * ------------------------------------------------------------
  */
 
-  /** ラスベガス計算に使うホール巡回順。IN側から先に入力が始まっていればIN→OUTの順にする */
+  /**
+   * ラスベガス計算に使うホール巡回順。
+   * state.firstHalf が設定済みならそれを優先。
+   * 未設定（古いデータ）はINスコアの有無で判断（後方互換）。
+   */
   function getVegasOrder(){
+    if(state.firstHalf === "IN") return [10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9];
+    if(state.firstHalf === "OUT") return orderOUT;
+    // 後方互換：firstHalf未設定の場合はINスコアの有無で判断
     const inStarted = [10,11,12,13,14,15,16,17,18].some(h => {
       const r = state.scores[h];
       return r && r.some(v => (v ?? "") !== "");
@@ -36,11 +43,12 @@
     const vegasOrder = getVegasOrder();
     const order = orderOUT;
 
-    // マッチ・チーム戦の各Hole
+    // マッチ戦の各Hole（ホール単独判定なので順序不問）
     for(const h of order){
       setResultCell(`match_${h}`, matchSymbol(h));
     }
-    const teamMap = teamSymbolsByOrder(order);
+    // チーム戦はプッシュ方式のためプレー順（vegasOrder）で処理する
+    const teamMap = teamSymbolsByOrder(vegasOrder);
     for(const h of order){
       setResultCell(`team_${h}`, teamMap[h] || "");
     }
@@ -63,9 +71,10 @@
     el("tIn4").innerHTML = formatTotalWithDiff(3, sumRangeForPlayer(3,10,18), 10, 18);
 
     // match/team合計はマッチ/チームタブ用に計算だけ保持
-    const full = matchTeamSumsByRange(order, {from:1,to:18});
-    const outS = matchTeamSumsByRange(order, {from:1,to:9});
-    const inS  = matchTeamSumsByRange(order, {from:10,to:18});
+    // チーム戦はプッシュ方式のためvegasOrder（プレー順）を渡す
+    const full = matchTeamSumsByRange(vegasOrder, {from:1,to:18});
+    const outS = matchTeamSumsByRange(vegasOrder, {from:1,to:9});
+    const inS  = matchTeamSumsByRange(vegasOrder, {from:10,to:18});
 
     // ドーミー表示
     clearDormieMarks();
@@ -101,19 +110,24 @@
     // Vegas（自動計算 + 手入力上書き）
     const vegas = calcVegasPoints(vegasOrder);
 
-    // INスタート時：OUTの打順表示をH18結果から動的更新
+    // ハーフ切替時：次のハーフの打順表示を前のハーフ最終ホール結果から動的更新
     {
-      const inS = vegasOrder[0] >= 10;
-      if(inS && state.viewHalf !== "IN") {
-        const h1Ord = vegas.orderNumsByHole[1];
-        if(h1Ord) {
-          [0,1,2,3].forEach(p => {
-            const inp = el(`ord${p+1}`);
-            if(inp && document.activeElement !== inp && h1Ord[p] !== "") {
-              inp.value = String(h1Ord[p]);
-            }
-          });
-        }
+      const inFirst = vegasOrder[0] >= 10; // IN先行かどうか
+      const updateOrdInputs = (hOrd) => {
+        if(!hOrd) return;
+        [0,1,2,3].forEach(p => {
+          const inp = el(`ord${p+1}`);
+          if(inp && document.activeElement !== inp && hOrd[p] !== "") {
+            inp.value = String(hOrd[p]);
+          }
+        });
+      };
+      if(inFirst && state.viewHalf === "OUT") {
+        // IN先行 → OUTの打順をH1（ベガス計算上の最初のOUTホール）から取得
+        updateOrdInputs(vegas.orderNumsByHole[1]);
+      } else if(!inFirst && state.viewHalf === "IN") {
+        // OUT先行 → INの打順をH10（ベガス計算上の最初のINホール）から取得
+        updateOrdInputs(vegas.orderNumsByHole[10]);
       }
     }
     

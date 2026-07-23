@@ -68,6 +68,7 @@ const state = {
   eagle: {},              // eagle[hole][p] = true/false
   teamHandicap: {},       // teamHandicap[hole] = true  (幸&M -1)
   inSwitched: false,      // OUT→IN切替が一度でも行われたか
+  firstHalf: null,        // 最初に打順を確定したハーフ（"OUT" or "IN" or null）
   activeOlyHole: null,    // 最後にオリンピックタブへジャンプしたHole番号
   courseNineOut: null,    // 27Hコース用：OUTで使うナイン名（例: "南"）
   courseNineIn: null,     // 27Hコース用：INで使うナイン名（例: "西"）
@@ -259,6 +260,18 @@ function load() {
     Object.assign(state, JSON.parse(raw));
     if (!Array.isArray(state.playOrderOUT)) state.playOrderOUT = [null, null, null, null];
     if (!Array.isArray(state.playOrderIN))  state.playOrderIN  = [null, null, null, null];
+    if (state.firstHalf === undefined) state.firstHalf = null;
+    // firstHalf未設定の場合、既存スコアから推定（打順未入力の旧データ向け後方互換）
+    if (state.firstHalf === null) {
+      const hasOUT = [1,2,3,4,5,6,7,8,9].some(h => {
+        const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
+      });
+      const hasIN = [10,11,12,13,14,15,16,17,18].some(h => {
+        const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
+      });
+      if (hasOUT && !hasIN) state.firstHalf = "OUT";
+      else if (hasIN && !hasOUT) state.firstHalf = "IN";
+    }
     if (state.courseNineOut === undefined)  state.courseNineOut = null;
     if (state.courseNineIn  === undefined)  state.courseNineIn  = null;
     // 単価未設定（空欄）のまま保存された古いデータを補完する

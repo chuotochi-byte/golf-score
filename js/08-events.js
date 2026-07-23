@@ -50,6 +50,18 @@
       if(v !== "" && (n < 1 || n > 4)) v = "";
       el(id).value = v;
       readOrderFromInputs();
+      // 4人分の打順が全て揃った時点で先行ハーフを記録（上書きしない）
+      if(state.firstHalf === null) {
+        const po = state.viewHalf === "IN" ? state.playOrderIN : state.playOrderOUT;
+        const nums = (Array.isArray(po) ? po : []).map(x => parseInt(x, 10));
+        const valid = nums.length === 4
+          && nums.every(x => Number.isFinite(x) && x >= 1 && x <= 4)
+          && (new Set(nums)).size === 4;
+        if(valid) {
+          state.firstHalf = state.viewHalf; // "OUT" or "IN"
+          save();
+        }
+      }
       recalcAll(); // ラスベガスの初回チーム分けに反映
       // 1〜4が入力されたら次の人の欄へ
       if(v !== "" && n >= 1 && n <= 4){

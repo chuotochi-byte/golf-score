@@ -32,25 +32,34 @@
     const stage = el("pdfStage");
     stage.innerHTML = "";
 
-    const outStarted = [1,2,3,4,5,6,7,8,9].some(h => {
-      const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
-    });
-    const inStarted = [10,11,12,13,14,15,16,17,18].some(h => {
-      const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
-    });
-    const allOrder = (!outStarted && inStarted)
+    // 先行ハーフ判定：state.firstHalf 優先、未設定は後方互換でスコアの有無から判断
+    const _inFirst = state.firstHalf === "IN"
+      ? true
+      : state.firstHalf === "OUT"
+        ? false
+        : (() => {
+            const outS = [1,2,3,4,5,6,7,8,9].some(h => {
+              const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
+            });
+            const inS  = [10,11,12,13,14,15,16,17,18].some(h => {
+              const r = state.scores[h]; return r && r.some(v => (v ?? "") !== "");
+            });
+            return !outS && inS;
+          })();
+    // ホール表示順（PDF行順）・Vegas計算順 — オリンピック/ラスベガス/マッチ/チーム戦全て共通
+    const allOrder = _inFirst
       ? [10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]
       : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
-    const vegasOrder = (!outStarted && inStarted)
+    const vegasOrder = _inFirst
       ? [10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]
       : orderOUT;
 
     const totals = sumPlayerTotal();
-    const full   = matchTeamSumsByRange(order, {from:1,to:18});
-    const mOut   = matchTeamSumsByRange(order, {from:1,to:9});
-    const mIn    = matchTeamSumsByRange(order, {from:10,to:18});
+    const full   = matchTeamSumsByRange(vegasOrder, {from:1,to:18});
+    const mOut   = matchTeamSumsByRange(vegasOrder, {from:1,to:9});
+    const mIn    = matchTeamSumsByRange(vegasOrder, {from:10,to:18});
     const vegas  = calcVegasPoints(vegasOrder);
-    const teamMap= teamSymbolsByOrder(order);
+    const teamMap= teamSymbolsByOrder(vegasOrder);
     const fmt    = (v)=> (v===""||v===null||v===undefined) ? "" : (v>0?`+${v}`:`${v}`);
     const N      = state.names;
 
@@ -180,11 +189,11 @@
     const allOrder   = (!outStarted&&inStarted)?[10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
     const vegasOrder = (!outStarted&&inStarted)?[10,11,12,13,14,15,16,17,18,1,2,3,4,5,6,7,8,9]:orderOUT;
     const totals  = sumPlayerTotal();
-    const full    = matchTeamSumsByRange(order,{from:1,to:18});
-    const mOut    = matchTeamSumsByRange(order,{from:1,to:9});
-    const mIn     = matchTeamSumsByRange(order,{from:10,to:18});
+    const full    = matchTeamSumsByRange(vegasOrder,{from:1,to:18});
+    const mOut    = matchTeamSumsByRange(vegasOrder,{from:1,to:9});
+    const mIn     = matchTeamSumsByRange(vegasOrder,{from:10,to:18});
     const vegas   = calcVegasPoints(vegasOrder);
-    const teamMap = teamSymbolsByOrder(order);
+    const teamMap = teamSymbolsByOrder(vegasOrder);
     const N       = state.names;
     const fmt     = (v)=>(v===""||v===null||v===undefined)?"":(v>0?`+${v}`:`${v}`);
 
